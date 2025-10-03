@@ -14,7 +14,7 @@ HEIGHT = GRID_ROWS * CELL_SIZE  # Hauteur = 9 * 80 = 720px
 
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Blue Prince")
-
+#fedgr
 # Couleurs
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
