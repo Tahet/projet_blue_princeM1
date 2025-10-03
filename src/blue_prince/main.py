@@ -39,7 +39,7 @@ def draw_window():
         for col in range(GRID_COLS):
             rect = pygame.Rect(col * cell_w, row * cell_h, cell_w, cell_h)
             pygame.draw.rect(WIN, GREY, rect, 1)
-
+#ghhs
     # Case du joueur
     rect_courant = pygame.Rect(pos_actuelle[0] * cell_w, pos_actuelle[1] * cell_h, cell_w, cell_h)
     pygame.draw.rect(WIN, BLUE, rect_courant)
