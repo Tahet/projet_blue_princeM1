@@ -31,6 +31,9 @@ font = pygame.font.SysFont("arial", 24)
 # Position du joueur - démarrage au centre bas
 pos_actuelle = [2, 8]  # [colonne, ligne] - milieu de la ligne du bas (colonne 2/5, ligne 8/9)
 
+# Direction sélectionnée avant de bouger
+direction_selectionnee = None  # None, 'up', 'left', 'down', 'right'
+
 def draw_window():
     WIN.fill(WHITE)
 
@@ -43,6 +46,43 @@ def draw_window():
     # Case du joueur
     rect_courant = pygame.Rect(pos_actuelle[0] * cell_w, pos_actuelle[1] * cell_h, cell_w, cell_h)
     pygame.draw.rect(WIN, BLUE, rect_courant)
+    
+    # Indicateur de direction (flèche)
+    if direction_selectionnee:
+        center_x = pos_actuelle[0] * cell_w + cell_w // 2
+        center_y = pos_actuelle[1] * cell_h + cell_h // 2
+        arrow_size = 20
+        
+        if direction_selectionnee == 'up':
+            # Flèche vers le haut
+            points = [
+                (center_x, center_y - arrow_size),
+                (center_x - arrow_size // 2, center_y),
+                (center_x + arrow_size // 2, center_y)
+            ]
+        elif direction_selectionnee == 'down':
+            # Flèche vers le bas
+            points = [
+                (center_x, center_y + arrow_size),
+                (center_x - arrow_size // 2, center_y),
+                (center_x + arrow_size // 2, center_y)
+            ]
+        elif direction_selectionnee == 'left':
+            # Flèche vers la gauche
+            points = [
+                (center_x - arrow_size, center_y),
+                (center_x, center_y - arrow_size // 2),
+                (center_x, center_y + arrow_size // 2)
+            ]
+        elif direction_selectionnee == 'right':
+            # Flèche vers la droite
+            points = [
+                (center_x + arrow_size, center_y),
+                (center_x, center_y - arrow_size // 2),
+                (center_x, center_y + arrow_size // 2)
+            ]
+        
+        pygame.draw.polygon(WIN, WHITE, points)
 
     # === Zone d'infos ===
     pygame.draw.rect(WIN, BLACK, (GAME_WIDTH, 0, INFO_WIDTH, HEIGHT), 2)
@@ -66,6 +106,7 @@ def draw_window():
     pygame.display.update()
 
 def main():
+    global direction_selectionnee
     clock = pygame.time.Clock()
     while True:
         clock.tick(30)
@@ -75,14 +116,29 @@ def main():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
+                # Sélectionner une direction avec Z/Q/S/D
                 if event.key == pygame.K_z and pos_actuelle[1] > 0:
-                    pos_actuelle[1] -= 1
+                    direction_selectionnee = 'up'
                 elif event.key == pygame.K_q and pos_actuelle[0] > 0:
-                    pos_actuelle[0] -= 1
+                    direction_selectionnee = 'left'
                 elif event.key == pygame.K_s and pos_actuelle[1] < GRID_ROWS - 1:
-                    pos_actuelle[1] += 1
+                    direction_selectionnee = 'down'
                 elif event.key == pygame.K_d and pos_actuelle[0] < GRID_COLS - 1:
-                    pos_actuelle[0] += 1
+                    direction_selectionnee = 'right'
+                # Confirmer le déplacement avec Entrée
+                elif event.key == pygame.K_RETURN:
+                    if direction_selectionnee == 'up' and pos_actuelle[1] > 0:
+                        pos_actuelle[1] -= 1
+                        direction_selectionnee = None
+                    elif direction_selectionnee == 'left' and pos_actuelle[0] > 0:
+                        pos_actuelle[0] -= 1
+                        direction_selectionnee = None
+                    elif direction_selectionnee == 'down' and pos_actuelle[1] < GRID_ROWS - 1:
+                        pos_actuelle[1] += 1
+                        direction_selectionnee = None
+                    elif direction_selectionnee == 'right' and pos_actuelle[0] < GRID_COLS - 1:
+                        pos_actuelle[0] += 1
+                        direction_selectionnee = None
 
         draw_window()
 
