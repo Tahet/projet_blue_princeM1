@@ -1,7 +1,6 @@
 import pygame
 import sys
 
-
 def init_window(grid_rows: int, grid_cols: int, cell_size: int, info_width: int, caption: str = "Blue Prince"):
 	"""Initialise la fenêtre de jeu et retourne le surface + tailles calculées.
 
@@ -44,9 +43,17 @@ def draw_window(win, pos_actuelle, grid_rows, grid_cols, cell_w, cell_h,
 			rect = pygame.Rect(col * cell_w, row * cell_h, cell_w, cell_h)
 			pygame.draw.rect(win, GREY, rect, 1)
 
-	# joueur
+	# Afficher l'image Entrance_Hall_Icon.webp sur la case (2,8)
+	try:
+		icon_img = pygame.image.load("src/blue_prince/data/Entrance_Hall_Icon.webp")
+		icon_img = pygame.transform.scale(icon_img, (cell_w, cell_h))
+		win.blit(icon_img, (2 * cell_w, 8 * cell_h))
+	except Exception as e:
+		print(f"Erreur chargement image: {e}")
+
+	# Contour blanc à la place du carré bleu du joueur
 	rect_courant = pygame.Rect(pos_actuelle[0] * cell_w, pos_actuelle[1] * cell_h, cell_w, cell_h)
-	pygame.draw.rect(win, BLUE, rect_courant)
+	pygame.draw.rect(win, WHITE, rect_courant, 4)  # 4 px d'épaisseur
 
 	# zone d'infos
 	pygame.draw.rect(win, BLACK, (game_width, 0, info_width, total_height), 2)
