@@ -4,8 +4,8 @@ class Joueur:
         self.pas = 70
         self.or_ = 0
         self.gemmes = 2
-        self.clefs = 0
-        #self.des = 0
+        self.cles = 0
+        self.des = 0
         self.position = [2, 8]  # Position initiale [colonne, ligne]
 
     # Gestion des pas
@@ -37,22 +37,30 @@ class Joueur:
         self.gemmes -= nb
         return True
 
-    def deplacer(self, direction): 
-        if (direction == "gauche" and self.position[0] > 0):
-            self.position[0] -= 1
-            return True
+    def deplacer(self, direction):
+        """
+        Tente de déplacer le joueur dans une direction.
+        Retourne True si le mouvement est possible (dans les limites), False sinon.
+        Ne modifie la position que si le mouvement est valide.
+        """
+        temp_pos = list(self.position)
+        moved = False
 
-        if (direction == "droite" and self.position[0] < 4):
-            self.position[0] += 1
-            return True
-
-    
-        if (direction == "haut" and self.position[1] > 0):
-            self.position[1] -= 1
-            return True
-
-        if (direction == "bas" and self.position[1] < 8):
-            self.position[1] += 1
+        if direction == "gauche" and self.position[0] > 0:
+            temp_pos[0] -= 1
+            moved = True
+        elif direction == "droite" and self.position[0] < 4: # 5 colonnes (0-4)
+            temp_pos[0] += 1
+            moved = True
+        elif direction == "haut" and self.position[1] > 0:
+            temp_pos[1] -= 1
+            moved = True
+        elif direction == "bas" and self.position[1] < 8: # 9 lignes (0-8)
+            temp_pos[1] += 1
+            moved = True
+        
+        if moved:
+            self.position = temp_pos
             return True
         
         return False
