@@ -71,6 +71,7 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
             
             # Récupérer cles_nes, ou utiliser une liste vide si la clé n'est pas spécifiée
             cles_necessaires = data.get("cles_nes", [])
+            rarete_val = int(data.get("rarete", 1))
             
             # 3. Créer l'objet Piece avec les 4 arguments positionnels
             nouvelle_piece = Piece(
@@ -78,7 +79,7 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
                 data["name"],
                 cles_necessaires, 
                 icon_img,
-                data['rarete']         
+                rarete_val         
             )
             salles_chargees.append(nouvelle_piece)
             
