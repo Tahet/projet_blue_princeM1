@@ -2,13 +2,14 @@ import os
 import pygame
 
 class Piece:
-    def __init__(self, directions, nom, cles_nes=[], icon_img=None):
+    def __init__(self, directions, nom, cles_nes=[], icon_img=None, rarete=1):
         self.directions = directions  # Liste des directions possibles (ex: ["haut", "bas", "gauche", "droite"])
         self.visitee = False  # Indique si la pièce a été visitée
         self.objets = []  # Liste des objets présents dans la pièce
         self.icon_img = icon_img
         self.nom = nom
         self.cles_nes = cles_nes
+        self.rarete = rarete
 
     def ajouter_objet(self, objet):
         self.objets.append(objet)
@@ -36,17 +37,26 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Entrance_Hall.webp", "name": "Entrance Hall", "connexions": ["N", "E", "W"]},
         {"file": "Antechamber.webp", "name": "Antechamber", "connexions": ["N", "E", "S", "W"], "cles_nes": ["N", "E", "S", "W"]},
         {"file": "Bedroom.webp", "name": "Bedroom", "connexions": ["N", "E", "S", "W"]},
-        {"file": "Closet.webp", "name": "Closet", "connexions": ["S"]},
-        {"file": "Commissary.webp", "name": "Commissary", "connexions": ["N", "E", "S"]},
+        {"file": "Closet.webp", "name": "Closet", "connexions": ["S"], 'rarete':'3'},
+        {"file": "Commissary.webp", "name": "Commissary", "connexions": ["N", "E", "S"], 'rarete':'2'},
         {"file": "Corridor.webp", "name": "Corridor", "connexions": ["N", "S"]},
         {"file": "Den.webp", "name": "Den", "connexions": ["N", "E", "S", "W"]},
         {"file": "East_Wing_Hall.webp", "name": "East Wing Hall", "connexions": ["N", "E", "S", "W"]},
-        {"file": "Locksmith.webp", "name": "Locksmith", "connexions": ["S", "W"]},
-        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["N", "E", "S", "W"]},
+        {"file": "Locksmith.webp", "name": "Locksmith", "connexions": ["S", "W"], 'rarete':'2'},
+        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["N", "E", "S", "W"], 'rarete':'2'},
         {"file": "Passageway.webp", "name": "Passageway", "connexions": ["N", "E", "S", "W"]},
         {"file": "Rumpus_Room.webp", "name": "Rumpus Room", "connexions": ["N", "E", "S", "W"]},
-        {"file": "Vault.webp", "name": "Vault", "connexions": ["E", "S", "W"]},
-        {"file": "Weight_Room.webp", "name": "Weight Room", "connexions": ["N", "E", "S", "W"]},
+        {"file": "Vault.webp", "name": "Vault", "connexions": ["E", "S", "W"], 'rarete':'3'},
+        {"file": "Weight_Room.webp", "name": "Weight Room", "connexions": ["N", "E", "S", "W"], 'rarete':'2'},
+        {"file": "Pantry.tiff", "name": "Pantry", "connexions": ["E", "S"]},
+        {"file": "Lavatory.webp", "name": "Lavatory", "connexions": ["S"], "rarete": '2'},
+        {"file": "Lavatory_E.tiff", "name": "Lavatory_E", "connexions": ["E"], "rarete": '2'},
+        {"file": "Lavatory_N.tiff", "name": "Lavatory_N", "connexions": ["N"], "rarete": '2'},
+        {"file": "Nook.tiff", "name": "Nouk", "connexions": ["N", "W"],"rarete": '2'},
+        {"file": "Trophy_Room.tiff", "name": "Trophy_Room", "connexions": ["N", "E"],"rarete": '2'},
+        {"file": "Den.tiff", "name": "Den", "connexions": ["W","N", "E"],"rarete": '2'},
+
+
     ]
 
     salles_chargees = []
@@ -67,7 +77,8 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
                 data["connexions"],
                 data["name"],
                 cles_necessaires, 
-                icon_img          
+                icon_img,
+                data['rarete']         
             )
             salles_chargees.append(nouvelle_piece)
             
