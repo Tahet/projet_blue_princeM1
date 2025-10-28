@@ -1,47 +1,94 @@
-# Gestion du joueur, de l'inventaire etc.
 class Joueur:
+    """Représente le joueur avec son inventaire et sa position.
+    
+    Attributes:
+        pas (int): Nombre de pas restants
+        or_ (int): Quantité d'or possédée
+        gemmes (int): Nombre de gemmes possédées
+        cles (int): Nombre de clés possédées
+        des (int): Nombre de dés possédés
+        position (list): Position [colonne, ligne] sur la grille
+    """
+    
     def __init__(self):
         self.pas = 70
         self.or_ = 0
         self.gemmes = 2
-        self.cles = 0
-        self.des = 0
-        self.position = [2, 8]  # Position initiale [colonne, ligne]
+        self.cles = 1
+        self.des = 1
+        self.position = [2, 8]
 
-    # Gestion des pas
     def ajouter_pas(self, nombre):
+        """Ajoute des pas au joueur.
+        
+        Args:
+            nombre (int): Nombre de pas à ajouter
+        """
         self.pas += nombre
+    
     def utiliser_pas(self):
+        """Consomme un pas.
+        
+        Returns:
+            bool: False si pas insuffisants, True sinon
+        """
         if self.pas <= 0:
             return False
         self.pas -= 1
         return True
 
-    # Gestion de l'or
     def ajouter_or(self, montant):
+        """Ajoute de l'or au joueur.
+        
+        Args:
+            montant (int): Quantité d'or à ajouter
+        """
         self.or_ += montant
 
     def utiliser_or(self, montant):
+        """Consomme de l'or.
+        
+        Args:
+            montant (int): Quantité d'or à consommer
+            
+        Returns:
+            bool: False si or insuffisant, True sinon
+        """
         if montant > self.or_:
             return False
         self.or_ -= montant
         return True
     
-    # Gestion des gemmes
     def ajouter_gemmes(self, nb):
+        """Ajoute des gemmes au joueur.
+        
+        Args:
+            nb (int): Nombre de gemmes à ajouter
+        """
         self.gemmes += nb
         
     def utiliser_gemmes(self, nb):
+        """Consomme des gemmes.
+        
+        Args:
+            nb (int): Nombre de gemmes à consommer
+            
+        Returns:
+            bool: False si gemmes insuffisantes, True sinon
+        """
         if nb > self.gemmes:
             return False
         self.gemmes -= nb
         return True
 
     def deplacer(self, direction):
-        """
-        Tente de déplacer le joueur dans une direction.
-        Retourne True si le mouvement est possible (dans les limites), False sinon.
-        Ne modifie la position que si le mouvement est valide.
+        """Déplace le joueur dans une direction.
+        
+        Args:
+            direction (str): Direction du mouvement ("haut", "bas", "gauche", "droite")
+            
+        Returns:
+            bool: False si mouvement hors limites, True sinon
         """
         temp_pos = list(self.position)
         moved = False
@@ -49,13 +96,13 @@ class Joueur:
         if direction == "gauche" and self.position[0] > 0:
             temp_pos[0] -= 1
             moved = True
-        elif direction == "droite" and self.position[0] < 4: # 5 colonnes (0-4)
+        elif direction == "droite" and self.position[0] < 4:
             temp_pos[0] += 1
             moved = True
         elif direction == "haut" and self.position[1] > 0:
             temp_pos[1] -= 1
             moved = True
-        elif direction == "bas" and self.position[1] < 8: # 9 lignes (0-8)
+        elif direction == "bas" and self.position[1] < 8:
             temp_pos[1] += 1
             moved = True
         
