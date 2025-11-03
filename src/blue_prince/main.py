@@ -1,14 +1,16 @@
 import pygame
 import sys
 import controles as controles
-from fenetre import init_window, draw_window as fenetre_draw_window
+from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution
 from joueur import Joueur
 from pieces import Piece, charger_pieces_blue_prince, joueur_tire_pieces
 
 # Configuration du jeu
 GRID_ROWS, GRID_COLS = 9, 5
-CELL_SIZE = 100
-SIDEBAR_WIDTH = 300
+POURCENTAGE = 0.9
+SIDEBAR_WIDTH = 450
+_, MAX_HEIGHT = adapter_resolution(POURCENTAGE)
+CELL_SIZE = MAX_HEIGHT // GRID_ROWS
 
 WIN, GAME_WIDTH, SIDEBAR_WIDTH, WIDTH, HEIGHT = init_window(
     GRID_ROWS, GRID_COLS, CELL_SIZE, SIDEBAR_WIDTH
