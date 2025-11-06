@@ -3,7 +3,8 @@ import sys
 import controles as controles
 from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution
 from joueur import Joueur
-from pieces import Piece, charger_pieces_blue_prince, joueur_tire_pieces
+from pieces import Piece, charger_pieces_blue_prince, joueur_tire_pieces, placer_objets_aleatoires
+from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage  # Importer les objets
 
 # Configuration du jeu
 GRID_ROWS, GRID_COLS = 9, 5
@@ -28,47 +29,60 @@ cell_h = CELL_SIZE
 font = pygame.font.SysFont("arial", 24)
 
 def main():
-    """Boucle principale du jeu.
-    
-    Initialise le joueur et les pièces, puis gère la boucle de jeu
-    avec affichage et gestion des événements.
-    """
-    clock = pygame.time.Clock()
-    joueur = Joueur()
-    preview_direction = None
-    pieces_tirees = []
-    piece_selectionnee_index = None
-    en_attente_selection = False
+    """Boucle principale du jeu."""
+    clock = pygame.time.Clock()  # Horloge pour réguler la vitesse du jeu
+    joueur = Joueur()  # Création du joueur
+    preview_direction = None  # Direction de prévisualisation (pas utilisée ici)
+    pieces_tirees = []  # Liste des pièces tirées
+    piece_selectionnee_index = None  # Index de la pièce sélectionnée
+    en_attente_selection = False  # Indicateur si une pièce est en attente de sélection
 
+    # Charger toutes les pièces en utilisant la fonction correcte
     toutes_les_pieces = charger_pieces_blue_prince(cell_w, cell_h, Piece)
     
-    grid_pieces = {}
+    grid_pieces = {}  # Dictionnaire pour les pièces placées dans la grille
     
     # Placement de l'Entrance Hall (départ)
     entrance_hall = next((p for p in toutes_les_pieces if p.nom == "Entrance Hall"), None)
     if entrance_hall:
-        entrance_hall.visitee = True
-        grid_pieces[(2, 8)] = entrance_hall
-    
+        entrance_hall.visitee = True  # Marquer la pièce comme visitée
+        grid_pieces[(2, 8)] = entrance_hall  # Placement dans la grille
+
     # Placement de l'Antechamber (objectif verrouillé)
     antechamber = next((p for p in toutes_les_pieces if p.nom == "Antechamber"), None)
     if antechamber:
-        antechamber.visitee = False
-        grid_pieces[(2, 0)] = antechamber
+        antechamber.visitee = False  # Ne pas visiter cette pièce au départ
+        grid_pieces[(2, 0)] = antechamber  # Placement dans la grille
 
+    # Appeler la fonction pour placer des objets aléatoires dans les pièces
+    objets_disponibles = [gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
+    placer_objets_aleatoires(toutes_les_pieces, objets_disponibles)
+    
     while True:
-        clock.tick(30)
+        clock.tick(30)  # Limiter à 30 images par seconde
 
+        # Gérer les mouvements et interactions avec la grille
         preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, grid_pieces = controles.mouvement(
             joueur, preview_direction, GRID_ROWS, GRID_COLS, 
             toutes_les_pieces, pieces_tirees, en_attente_selection, 
             piece_selectionnee_index, grid_pieces
         )
-        
+
+        # Si le joueur interagit avec un objet dans une pièce
+        # Suppose qu'il se trouve dans une pièce où un objet est présent
+        for piece in grid_pieces.values():
+            for objet in piece.objets:
+                if not objet.is_collected:  # Si l'objet n'est pas encore collecté
+                    objet.appliquer_effet(joueur)  # Appliquer l'effet de l'objet à chaque objet trouvé
+                    print(f"Effet appliqué pour l'objet {objet.nom}")
+
+        # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
         fenetre_draw_window(WIN, joueur, grid_pieces, preview_direction, GRID_ROWS, GRID_COLS, cell_w, cell_h,
                             GAME_WIDTH, SIDEBAR_WIDTH, WIDTH, HEIGHT,
                             colors, font, pieces_tirees, en_attente_selection, piece_selectionnee_index)
+
+
 
 if __name__ == "__main__":
     main()

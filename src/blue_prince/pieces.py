@@ -1,6 +1,7 @@
 import os
 import pygame
 import random
+from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage  # Importer les objets
 
 class Piece:
     """Représente une pièce du jeu avec ses connexions et propriétés.
@@ -29,6 +30,7 @@ class Piece:
         self.cles_nes = cles_nes
         self.rarete = rarete
         self.cout_gemmes = cout_gemmes
+        self.a_objet = False
 
     def ajouter_objet(self, objet):
         """Ajoute un objet à la pièce.
@@ -207,6 +209,10 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         except pygame.error as e:
             print(f"Erreur de chargement pour {data['file']} : {e}")
 
+        # Ajouter des objets aléatoires aux pièces
+        objets_disponibles = [gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
+        placer_objets_aleatoires(salles_chargees, objets_disponibles)
+
     return salles_chargees
 
 def tirer_3_pieces_aleatoires(pieces_disponibles):
@@ -348,3 +354,24 @@ def placer_piece_si_possible(piece, joueur, direction):
         print(f"Pas assez de gemmes : besoin de {cout}, vous avez {joueur.gemmes}")
     
     return False
+
+def placer_objets_aleatoires(pieces_disponibles, objets_disponibles):
+    """Place des objets aléatoirement dans les pièces, mais seulement une fois par pièce."""
+    
+    for piece in pieces_disponibles:
+        if not piece.a_objet:  # Si la pièce n'a pas déjà un objet
+            if random.random() < 0.4:  # Probabilité de 40% de placer un objet
+                # Sélectionner un objet en fonction de sa chance d'apparition
+                objet = random.choices(
+                    objets_disponibles, 
+                    weights=[obj.chance_app for obj in objets_disponibles]
+                )[0]
+                
+                # Ajouter l'objet dans la pièce
+                piece.ajouter_objet(objet)
+                piece.a_objet = True  # Marquer la pièce comme ayant un objet
+                print(f"L'objet {objet.nom} a été ajouté à la pièce {piece.nom}")
+
+
+
+        
