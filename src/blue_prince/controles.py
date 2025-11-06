@@ -42,7 +42,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                 # Relancer le tirage avec F si le joueur a un dé
                 elif event.key == pygame.K_f and joueur.des > 0:
                     joueur.des -= 1
-                    print(f"Utilisation d'un dé ! Dés restants : {joueur.des}")
                     
                     # Nouveau tirage
                     pieces_tirees = joueur_tire_pieces(toutes_les_pieces)
@@ -51,10 +50,8 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                         piece.changer_orientation(preview_direction)
                     
                     piece_selectionnee_index = 0
-                    print(f"\nNouveau tirage de 3 pièces :")
                     for i, piece in enumerate(pieces_tirees, 1):
                         cout = getattr(piece, 'cout_gemmes', 0)
-                        print(f"  {i}. {piece.nom} (Rareté: {piece.rarete}, Coût: {cout} gemmes)")
                 
                 # Validation avec Espace
                 elif event.key == pygame.K_SPACE and piece_selectionnee_index is not None:
@@ -66,7 +63,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             nouvelle_pos = tuple(joueur.position)
                             piece_choisie.visitee = True
                             grid_pieces[nouvelle_pos] = piece_choisie
-                            print(f"Pièce '{piece_choisie.nom}' placée et marquée comme visitée à {nouvelle_pos}")
                             
                             en_attente_selection = False
                             pieces_tirees = []
@@ -127,7 +123,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             orientation_requise = direction_sortie.get(preview_direction)
                             
                             if orientation_requise not in piece_actuelle.directions:
-                                print(f"Impossible : la pièce actuelle ({piece_actuelle.nom}) n'a pas de connexion vers {preview_direction}")
                                 preview_direction = None
                                 continue
                         
@@ -138,7 +133,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             # Gestion de l'Antechamber verrouillée
                             if piece_destination.nom == "Antechamber" and not piece_destination.visitee:
                                 if joueur.cles > 0:
-                                    print(f"Utilisation d'une clé pour entrer dans l'Antechamber")
                                     joueur.cles -= 1
                                     piece_destination.visitee = True
                                     if joueur.deplacer(preview_direction):
@@ -148,7 +142,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                     preview_direction = None
                             else:
                                 # Pièce déjà visitée : déplacement simple
-                                print(f"Case déjà visitée : déplacement simple sans tirage")
                                 if joueur.deplacer(preview_direction):
                                     preview_direction = None
                                 else:
@@ -162,10 +155,8 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             
                             en_attente_selection = True
                             piece_selectionnee_index = 0
-                            print(f"\n3 pièces tirées pour la direction '{preview_direction}':")
                             for i, piece in enumerate(pieces_tirees, 1):
                                 cout = getattr(piece, 'cout_gemmes', 0)
-                                print(f"  {i}. {piece.nom} (Rareté: {piece.rarete}, Coût: {cout} gemmes)")
                     else:
                         preview_direction = None
                 

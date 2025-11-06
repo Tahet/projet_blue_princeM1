@@ -17,6 +17,9 @@ class Joueur:
         self.cles = 1
         self.des = 1
         self.position = [2, 8]
+        self.chance_metaux = 1
+        self.chance_objets = 1
+        self.kit_crochetage = 0
 
     def ajouter_pas(self, nombre):
         """Ajoute des pas au joueur.

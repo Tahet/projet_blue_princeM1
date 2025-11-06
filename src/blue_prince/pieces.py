@@ -164,7 +164,20 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Pantry.tiff", "name": "Pantry", "connexions": ["W", "S"]},
         {"file": "Lavatory.webp", "name": "Lavatory", "connexions": ["S"], "rarete": '2'},
         {"file": "Nook.tiff", "name": "Nook", "connexions": ["S", "W"],"rarete": '2'},
-        {"file": "Trophy_Room.tiff", "name": "Trophy_Room", "connexions": ["S", "W"],"rarete": '2'},
+        {"file": "Trophy_Room.tiff", "name": "Trophy Room", "connexions": ["S", "W"],"rarete": '2'},
+        {"file": "Kitchen.webp", "name": "Kitchen", "connexions":["S","W"],'cout_gemmes': 1},
+        {"file": "Drawing_Room.webp", "name": "Drawing Room","connexions":["S","W","E"],'cout_gemmes': 1},
+        {"file": "Chapel.webp", "name": "Chapel","connexions":["S","W","E"]},
+        {"file": "The_Pool.webp", "name": "The Pool","connexions":["S","W","E"],"rarete": 2,'cout_gemmes': 1},
+        {"file": "Office.webp", "name": "Office","connexions":["S","W"],"rarete":2,'cout_gemmes': 0},
+        {"file": "Boudoir.webp", "name": "Boudoir","connexions":["S","W"]},
+        {"file": "Security.webp", "name": "Security","connexions":["S","W","E"],"rarete":2,'cout_gemmes': 0},
+        {"file": "Patio.webp", "name": "Patio","connexions":["S","W"],"rarete":2,'cout_gemmes': 0},
+        {"file": "Foyer.webp", "name": "Foyer","connexions":["S","N"],"rarete":3,'cout_gemmes': 1},
+        {"file": "Conservatory.webp", "name": "Conservatory","connexions":["S","W"],"rarete":3,'cout_gemmes': 0},
+        {"file": "Casino.webp", "name": "Casino","connexions":["S","W"],"rarete":3,'cout_gemmes': 1},
+        {"file": "Cloister.webp", "name": "Cloister","connexions":["S","W","E","N"],"rarete":3,'cout_gemmes': 2},
+
     ]
 
     salles_chargees = []
