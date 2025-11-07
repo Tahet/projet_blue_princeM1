@@ -87,9 +87,9 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     pygame.draw.rect(win, BLACK, (sidebar_x, 0, sidebar_width, total_height), 2)
 
     # Constantes pour la nouvelle mise en page
-    info_y_end = 250
+    info_y_end = 280  # Augmenté pour avoir plus d'espace
     TEXT_PADDING = 20 # Marge à gauche et droite
-    TEXT_ZONE_WIDTH = 180 # Largeur fixe pour le texte d'inventaire
+    TEXT_ZONE_WIDTH = 240 # Augmenté pour les textes plus longs
 
     # Section inventaire (Lignes de texte)
     debut_texte = sidebar_x + TEXT_PADDING
@@ -97,19 +97,25 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     text = font.render("Inventaire:", True, BLACK)
     win.blit(text, (debut_texte, 20)) # Position 20, 20 inchangée
 
+    # Utiliser une police plus petite pour l'inventaire
+    info_font = pygame.font.SysFont("arial", 18)
+    
     info_lines = [
         f"Pas : {joueur.pas}",
         f"Or : {joueur.or_}",
         f"Gemmes : {joueur.gemmes}",
         f"Clés : {joueur.cles}",
-        f"Dés : {joueur.des}"
+        f"Dés : {joueur.des}",
+        f"Kit Crochetage : {'Oui' if joueur.kit_crochetage > 0 else 'Non'}",
+        f"Detecteur Metaux : {'Oui' if joueur.chance_metaux > 1 else 'Non'}",
+        f"Patte de Lapin : {'Oui' if joueur.chance_objets > 1 else 'Non'}"
     ]
     for i, line in enumerate(info_lines):
-        txt = font.render(line, True, BLACK)
-        win.blit(txt, (debut_texte, 60 + i * 30)) # Utilise debut_texte
+        txt = info_font.render(line, True, BLACK)
+        win.blit(txt, (debut_texte, 50 + i * 25)) # Espacement réduit à 25
 
-    pos_text = font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, BLACK)
-    win.blit(pos_text, (debut_texte, 220)) # Utilise debut_texte
+    pos_text = info_font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, BLACK)
+    win.blit(pos_text, (debut_texte, 250)) # Ajusté
 
     # Section aperçu de la pièce actuelle (Déplacée et redimensionnée)
     
