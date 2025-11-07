@@ -3,8 +3,8 @@ import sys
 import controles as controles
 from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution
 from joueur import Joueur
-from pieces import Piece, charger_pieces_blue_prince, joueur_tire_pieces, placer_objets_aleatoires
-from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage  # Importer les objets
+from pieces import Piece, charger_pieces_blue_prince, joueur_tire_pieces, placer_objets_aleatoires, appliquer_effets_pieces_garantis
+from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage, cle, de  # Importer les objets
 
 # Configuration du jeu
 GRID_ROWS, GRID_COLS = 9, 5
@@ -37,8 +37,11 @@ def main():
     piece_selectionnee_index = None  # Index de la pièce sélectionnée
     en_attente_selection = False  # Indicateur si une pièce est en attente de sélection
 
-    # Charger toutes les pièces en utilisant la fonction correcte
+    # Charger toutes les pièces
     toutes_les_pieces = charger_pieces_blue_prince(cell_w, cell_h, Piece)
+    
+    # Liste des objets disponibles
+    objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
     
     grid_pieces = {}  # Dictionnaire pour les pièces placées dans la grille
     
@@ -54,9 +57,8 @@ def main():
         antechamber.visitee = False  # Ne pas visiter cette pièce au départ
         grid_pieces[(2, 0)] = antechamber  # Placement dans la grille
 
-    # Appeler la fonction pour placer des objets aléatoires dans les pièces
-    objets_disponibles = [gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
-    placer_objets_aleatoires(toutes_les_pieces, objets_disponibles)
+    # Ensemble pour suivre les pièces déjà visitées et ayant eu leurs effets appliqués
+    pieces_effets_appliques = set()
     
     while True:
         clock.tick(30)  # Limiter à 30 images par seconde
@@ -65,16 +67,23 @@ def main():
         preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, grid_pieces = controles.mouvement(
             joueur, preview_direction, GRID_ROWS, GRID_COLS, 
             toutes_les_pieces, pieces_tirees, en_attente_selection, 
-            piece_selectionnee_index, grid_pieces
+            piece_selectionnee_index, grid_pieces, objets_disponibles
         )
 
-        # Si le joueur interagit avec un objet dans une pièce
-        # Suppose qu'il se trouve dans une pièce où un objet est présent
-        for piece in grid_pieces.values():
-            for objet in piece.objets:
-                if not objet.is_collected:  # Si l'objet n'est pas encore collecté
-                    objet.appliquer_effet(joueur)  # Appliquer l'effet de l'objet à chaque objet trouvé
-                    print(f"Effet appliqué pour l'objet {objet.nom}")
+        # Vérifier si le joueur est dans une pièce et appliquer les effets
+        pos_tuple = tuple(joueur.position)
+        if pos_tuple in grid_pieces:
+            piece_actuelle = grid_pieces[pos_tuple]
+            
+            # Appliquer les effets garantis de la pièce
+            if pos_tuple not in pieces_effets_appliques:
+                appliquer_effets_pieces_garantis(piece_actuelle, joueur)
+                pieces_effets_appliques.add(pos_tuple)
+            
+            # Collecter les objets dans la pièce
+            for objet in piece_actuelle.objets:
+                if not objet.is_collected:
+                    objet.appliquer_effet(joueur)
 
         # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}

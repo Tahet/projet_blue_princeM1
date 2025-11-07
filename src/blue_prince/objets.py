@@ -57,15 +57,24 @@ class Objet:
             elif self.nom == 'kit de crochetage':
                 joueur.kit_crochetage = 1
                 print("Vous avez trouvé un kit de crochetage !")
+            elif self.nom == 'clé':
+                joueur.cles += 1
+                print("Vous avez trouvé une clé ")
+            elif self.nom == 'dé':
+                joueur.des += 1
+                print("Vous avez trouvé un dé ")
+            
 
             # Marquer l'objet comme collecté pour éviter qu'il soit pris à nouveau
             self.is_collected = True
 
+cle = Objet('clé', 1)
+de = Objet('dé', 2)
 gemme = Objet('gemme', 1)
 pomme = Objet('pomme', 1)
 banane = Objet('banane', 1)
-detecteur_metaux = Objet('dectecteur de metaux',2)
+detecteur_metaux = Objet('detecteur de metaux',2)
 patte_lapin = Objet('patte de lapin',3)
 kit_crochetage= Objet('kit de crochetage', 2)
 
-objets_disponibles = [pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
+objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]

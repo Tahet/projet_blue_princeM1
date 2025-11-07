@@ -1,10 +1,10 @@
 import pygame
 import sys
-from pieces import joueur_tire_pieces, placer_piece_si_possible
+from pieces import joueur_tire_pieces, placer_piece_si_possible, placer_objets_aleatoires
 
 def mouvement(joueur, preview_direction, grid_rows, grid_cols, 
               toutes_les_pieces, pieces_tirees, en_attente_selection, 
-              piece_selectionnee_index, grid_pieces):
+              piece_selectionnee_index, grid_pieces, objets_disponibles):
     """Gère les entrées clavier pour le mouvement et la sélection de pièces.
     
     Deux modes de fonctionnement :
@@ -21,6 +21,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
         en_attente_selection (bool): True si en mode sélection
         piece_selectionnee_index (int): Index de la pièce sélectionnée (0-2)
         grid_pieces (dict): Dictionnaire (col, row) -> Piece
+        objets_disponibles (list): Liste des objets disponibles
         
     Returns:
         tuple: (preview_direction, en_attente_selection, pieces_tirees, 
@@ -63,6 +64,9 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             nouvelle_pos = tuple(joueur.position)
                             piece_choisie.visitee = True
                             grid_pieces[nouvelle_pos] = piece_choisie
+                            
+                            # Placer des objets aléatoires dans la pièce nouvellement placée
+                            placer_objets_aleatoires([piece_choisie], objets_disponibles, joueur)
                             
                             en_attente_selection = False
                             pieces_tirees = []
@@ -136,6 +140,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                     joueur.cles -= 1
                                     piece_destination.visitee = True
                                     if joueur.deplacer(preview_direction):
+                                        joueur.utiliser_pas()
                                         preview_direction = None
                                 else:
                                     print(f"L'Antechamber est verrouillée ! Vous avez besoin d'une clé.")
@@ -143,6 +148,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             else:
                                 # Pièce déjà visitée : déplacement simple
                                 if joueur.deplacer(preview_direction):
+                                    joueur.utiliser_pas()
                                     preview_direction = None
                                 else:
                                     print("Erreur de déplacement")

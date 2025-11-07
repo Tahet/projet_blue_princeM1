@@ -1,7 +1,7 @@
 import os
 import pygame
 import random
-from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage  # Importer les objets
+from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage
 
 class Piece:
     """Représente une pièce du jeu avec ses connexions et propriétés.
@@ -209,10 +209,6 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         except pygame.error as e:
             print(f"Erreur de chargement pour {data['file']} : {e}")
 
-        # Ajouter des objets aléatoires aux pièces
-        objets_disponibles = [gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
-        placer_objets_aleatoires(salles_chargees, objets_disponibles)
-
     return salles_chargees
 
 def tirer_3_pieces_aleatoires(pieces_disponibles):
@@ -355,23 +351,95 @@ def placer_piece_si_possible(piece, joueur, direction):
     
     return False
 
-def placer_objets_aleatoires(pieces_disponibles, objets_disponibles):
-    """Place des objets aléatoirement dans les pièces, mais seulement une fois par pièce."""
+def placer_objets_aleatoires(pieces_disponibles, objets_disponibles, joueur):
+    """Place des objets aléatoirement dans les pièces.
     
+    Args:
+        pieces_disponibles (list): Liste des pièces où placer les objets
+        objets_disponibles (list): Liste des objets disponibles
+        joueur (Joueur): Le joueur (pour vérifier ses objets)
+    """
     for piece in pieces_disponibles:
-        if not piece.a_objet:  # Si la pièce n'a pas déjà un objet
-            if random.random() < 0.4:  # Probabilité de 40% de placer un objet
-                # Sélectionner un objet en fonction de sa chance d'apparition
-                objet = random.choices(
-                    objets_disponibles, 
-                    weights=[obj.chance_app for obj in objets_disponibles]
-                )[0]
-                
-                # Ajouter l'objet dans la pièce
-                piece.ajouter_objet(objet)
-                piece.a_objet = True  # Marquer la pièce comme ayant un objet
-                print(f"L'objet {objet.nom} a été ajouté à la pièce {piece.nom}")
-
-
-
+        # Ne pas placer d'objets dans les pièces spéciales
+        if piece.nom in ["Entrance Hall", "Antechamber"]:
+            continue
         
+        # Objets garantis pour certaines pièces
+        if piece.nom == "Den":
+            piece.ajouter_objet(gemme)
+        elif piece.nom == "Closet":
+            objet1 = random.choice(objets_disponibles)
+            objet2 = random.choice(objets_disponibles)
+            piece.ajouter_objet(objet1)
+            piece.ajouter_objet(objet2)
+        
+        # Objets aléatoires pour les autres pièces
+        elif not piece.a_objet:
+            # Patte de lapin: 60% de chance au lieu de 40%
+            chance_objet = 0.6 if joueur.chance_objets == 2 else 0.4
+            
+            if random.random() < chance_objet:
+                # Détecteur de métaux: augmenter la chance pour les objets métalliques
+                if joueur.chance_metaux == 2:
+                    # Créer une liste de poids modifiée
+                    poids = []
+                    for obj in objets_disponibles:
+                        # Objets métalliques: clé, gemme
+                        if obj.nom in ["cle", "gemme"]:
+                            poids.append(obj.chance_app * 2)  # Double la chance
+                        else:
+                            poids.append(obj.chance_app)
+                    
+                    objet = random.choices(objets_disponibles, weights=poids)[0]
+                else:
+                    objet = random.choices(
+                        objets_disponibles, 
+                        weights=[obj.chance_app for obj in objets_disponibles]
+                    )[0]
+                
+                piece.ajouter_objet(objet)
+                piece.a_objet = True
+
+
+def appliquer_effets_pieces_garantis(piece, joueur):
+    """Applique les effets garantis d'une pièce au joueur.
+    
+    Args:
+        piece (Piece): La pièce dont les effets doivent être appliqués
+        joueur (Joueur): Le joueur qui reçoit les effets
+    """
+    # Bedroom: le joueur gagne 2 pas
+    if piece.nom == "Bedroom":
+        joueur.ajouter_pas(2)
+        print(f"Vous avez gagné 2 pas dans la bedroom")
+    
+    # Pantry: le joueur gagne 4 or
+    elif piece.nom == "Pantry":
+        joueur.ajouter_or(4)
+        print(f"Vous avez trouvé 4 d'or dans la pantry")
+    
+    # Chapel: le joueur perd 1 or
+    elif piece.nom == "Chapel":
+        if joueur.or_ > 0:
+            joueur.utiliser_or(1)
+            print(f"Vous avez perdu 1 d'or dans la chapel")
+    
+    # Rumpus Room: le joueur gagne 8 or
+    elif piece.nom == "Rumpus Room":
+        joueur.ajouter_or(8)
+        print(f"Vous avez trouvé 8 d'or dans la rumpus room")
+
+    # Nook: le joueur gagne une clé
+    elif piece.nom == "Nook":
+        joueur.ajouter_cle()
+        print(f"Vous avez trouvé une clé dans la nook")
+
+    # Trophy Room: le joueur gagne 8 gemmes
+    elif piece.nom == "Trophy Room":
+        joueur.ajouter_gemmes(8)
+        print(f"Vous avez trouvé 8 gemmes dans la trophy room")
+
+    # Vault: le joueur gagne 40 or
+    elif piece.nom == "Vault":
+        joueur.ajouter_or(40)
+        print(f"Vous avez trouvé 40 d'or dans la vault")

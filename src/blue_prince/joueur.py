@@ -11,7 +11,7 @@ class Joueur:
     """
     
     def __init__(self):
-        self.pas = 70
+        self.pas = 50
         self.or_ = 0
         self.gemmes = 2
         self.cles = 1
@@ -83,7 +83,22 @@ class Joueur:
             return False
         self.gemmes -= nb
         return True
+    
+    def ajouter_cle(self):
+        """Ajoute une clé au joueur."""
+        self.cles += 1
 
+    def utiliser_cle(self):
+        """Consomme une clé.
+        
+        Returns:
+            bool: False si pas de clé, True sinon
+        """
+        if self.cles <= 0:
+            return False
+        self.cles -= 1
+        return True
+    
     def deplacer(self, direction):
         """Déplace le joueur dans une direction.
         
