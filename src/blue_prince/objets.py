@@ -1,5 +1,6 @@
 import random
 import pieces
+
 class Objet:
     """Représente un objet du jeu.
     
@@ -8,12 +9,17 @@ class Objet:
         prix (int): Prix d'achat en or
         description (str): Description de l'objet
     """
-    
-    def __init__(self, nom, chance_app):
+
+    def __init__(self, nom, chance_app, unique=False):
         self.nom = nom
         self.chance_app = chance_app
-        self.is_collected = False  # Nouvel attribut pour vérifier si l'objet a été ramassé
+        self.is_collected = False
+        self.unique = unique
 
+    def copier(self):
+        """Crée une copie indépendante de l'objet."""
+        return Objet(self.nom, self.chance_app, self.unique)
+    
     def ajouter_au_joueur(self, joueur, nb_or=0):
         """Ajoute cet objet à l'inventaire du joueur."""
         if self.nom == "clé":
@@ -36,45 +42,61 @@ class Objet:
         elif self.nom == "or" and nb_or <= joueur.or_:
             joueur.utiliser_or(nb_or)
     
-    def appliquer_effet(self, joueur):
+    def appliquer_effet(self, joueur):  # ← INDENTÉ ICI (même niveau que les autres méthodes)
         """Applique l'effet de l'objet au joueur, mais seulement si l'objet n'a pas encore été ramassé."""
         if not self.is_collected:
+            # Vérifier si l'objet est unique et si le joueur l'a déjà
+            if self.unique:
+                if self.nom == 'detecteur de metaux' and joueur.chance_metaux == 2:
+                    return None
+                elif self.nom == 'patte de lapin' and joueur.chance_objets == 2:
+                    return None
+                elif self.nom == 'kit de crochetage' and joueur.kit_crochetage == 1:
+                    return None
+            
+            # Appliquer l'effet et retourner le nom pour l'affichage
+            nom_affichage = None
+            
             if self.nom == 'gemme':
                 joueur.ajouter_gemmes(1)
-                print("Vous avez trouvé 1 gemme")
+                nom_affichage = "1 gemme"
             elif self.nom == 'pomme':
                 joueur.ajouter_pas(2)
-                print("Vous avez trouvé une pomme !")
+                nom_affichage = "1 pomme"
             elif self.nom == 'banane':
                 joueur.ajouter_pas(3)
-                print("Vous avez trouvé une banane !")
+                nom_affichage = "1 banane"
             elif self.nom == 'detecteur de metaux':
                 joueur.chance_metaux = 2
-                print("Vous avez trouvé un détecteur de métaux !")
+                nom_affichage = "1 détecteur de métaux"
             elif self.nom == 'patte de lapin':
                 joueur.chance_objets = 2
-                print("Vous avez trouvé une patte de lapin !")
+                nom_affichage = "1 patte de lapin"
             elif self.nom == 'kit de crochetage':
                 joueur.kit_crochetage = 1
-                print("Vous avez trouvé un kit de crochetage !")
+                nom_affichage = "1 kit de crochetage"
             elif self.nom == 'clé':
                 joueur.cles += 1
-                print("Vous avez trouvé une clé ")
+                nom_affichage = "1 clé"
             elif self.nom == 'dé':
                 joueur.des += 1
-                print("Vous avez trouvé un dé ")
+                nom_affichage = "1 dé"
             
-
-            # Marquer l'objet comme collecté pour éviter qu'il soit pris à nouveau
+            # Marquer l'objet comme collecté
             self.is_collected = True
+            
+            return nom_affichage
+        
+        return None
 
+# Objets globaux
 cle = Objet('clé', 1)
 de = Objet('dé', 2)
 gemme = Objet('gemme', 1)
 pomme = Objet('pomme', 1)
 banane = Objet('banane', 1)
-detecteur_metaux = Objet('detecteur de metaux',2)
-patte_lapin = Objet('patte de lapin',3)
-kit_crochetage= Objet('kit de crochetage', 2)
+detecteur_metaux = Objet('detecteur de metaux', 2, unique=True)
+patte_lapin = Objet('patte de lapin', 3, unique=True)
+kit_crochetage = Objet('kit de crochetage', 2, unique=True)
 
 objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]

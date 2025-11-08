@@ -107,6 +107,33 @@ class Piece:
         if self.icon_img_original:
             self.icon_img = pygame.transform.rotate(self.icon_img_original, -angle)
     
+    def appliquer_rotation(self, angle):
+        """Applique une rotation manuelle à la pièce.
+        
+        Args:
+            angle (int): Angle de rotation (0, 90, 180, 270)
+        """
+        if angle == 0:
+            self.directions = self.directions_originales.copy()
+            self.icon_img = self.icon_img_original.copy() if self.icon_img_original else None
+            return
+        
+        # Rotation des directions cardinales
+        orientations = ["N", "E", "S", "W"]
+        rotation_steps = angle // 90
+        nouvelles_directions = []
+        
+        for direction in self.directions_originales:
+            idx = orientations.index(direction)
+            new_idx = (idx + rotation_steps) % 4
+            nouvelles_directions.append(orientations[new_idx])
+        
+        self.directions = nouvelles_directions
+        
+        # Rotation de l'image
+        if self.icon_img_original:
+            self.icon_img = pygame.transform.rotate(self.icon_img_original, -angle)
+    
     def copier(self):
         """Crée une copie indépendante de la pièce.
         
@@ -211,26 +238,129 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
 
     return salles_chargees
 
-def tirer_3_pieces_aleatoires(pieces_disponibles):
-    """Tire 3 pièces aléatoires en fonction de leur rareté.
+def verifier_validite_piece_avec_rotation(piece, position_future, grid_pieces, grid_rows, grid_cols, orientation_entree_requise):
+    """Vérifie si une pièce peut être placée en testant toutes les rotations.
     
-    Utilise un système de pondération basé sur la rareté :
-    - Rareté 1 : 100 chances
-    - Rareté 2 : 50 chances
-    - Rareté 3 : 25 chances
+    Essaie les 4 orientations possibles (0°, 90°, 180°, 270°) et retourne
+    la première orientation valide trouvée qui a aussi la bonne connexion d'entrée.
     
     Args:
-        pieces_disponibles (list): Liste des pièces disponibles
+        piece (Piece): La pièce à vérifier
+        position_future (tuple): Position (col, row) où la pièce serait placée
+        grid_pieces (dict): Dictionnaire des pièces déjà placées
+        grid_rows (int): Nombre de lignes de la grille
+        grid_cols (int): Nombre de colonnes de la grille
+        orientation_entree_requise (str): Orientation requise pour l'entrée (N, S, E, W)
         
     Returns:
-        list: Liste de 3 pièces uniques (ou moins si insuffisant)
+        tuple: (bool, int) - (est_valide, angle_rotation) où angle_rotation est 0, 90, 180 ou 270
     """
-    # Exclure les pièces spéciales
-    pieces_tirables = [p for p in pieces_disponibles 
-                       if p.nom not in ["Antechamber", "Entrance Hall"]]
+    col, row = position_future
+    
+    # Mapping des directions vers les déplacements
+    direction_offset = {
+        "N": (0, -1),
+        "S": (0, 1),
+        "E": (1, 0),
+        "W": (-1, 0)
+    }
+    
+    # Mapping des directions opposées
+    direction_opposee = {
+        "N": "S",
+        "S": "N",
+        "E": "W",
+        "W": "E"
+    }
+    
+    # Essayer les 4 rotations possibles
+    for angle in [0, 90, 180, 270]:
+        # Calculer les directions après rotation
+        orientations = ["N", "E", "S", "W"]
+        rotation_steps = angle // 90
+        directions_tournees = []
+        
+        for direction in piece.directions_originales:
+            idx = orientations.index(direction)
+            new_idx = (idx + rotation_steps) % 4
+            directions_tournees.append(orientations[new_idx])
+        
+        # Vérifier d'abord si la pièce a la connexion d'entrée requise
+        if orientation_entree_requise not in directions_tournees:
+            continue  # Cette rotation n'a pas la bonne connexion d'entrée
+        
+        # Vérifier si cette orientation est valide (toutes les ouvertures)
+        est_valide = True
+        
+        for direction in directions_tournees:
+            offset_col, offset_row = direction_offset[direction]
+            voisin_col = col + offset_col
+            voisin_row = row + offset_row
+            
+            # Vérifier si hors de la map
+            if voisin_col < 0 or voisin_col >= grid_cols or voisin_row < 0 or voisin_row >= grid_rows:
+                est_valide = False
+                break
+            
+            # Vérifier s'il y a une pièce voisine
+            voisin_pos = (voisin_col, voisin_row)
+            if voisin_pos in grid_pieces:
+                piece_voisine = grid_pieces[voisin_pos]
+                direction_requise = direction_opposee[direction]
+                
+                # Si la pièce voisine n'a pas d'ouverture dans notre direction, c'est un mur
+                if direction_requise not in piece_voisine.directions:
+                    est_valide = False
+                    break
+        
+        if est_valide:
+            return True, angle
+    
+    return False, 0
+
+def tirer_3_pieces_aleatoires(gestionnaire_pieces, position_future, grid_pieces, grid_rows, grid_cols, direction_entree):
+    """Tire 3 pièces aléatoires valides en fonction de leur rareté.
+    
+    Les pièces tirées doivent avoir des ouvertures valides (pas vers des murs ou hors map).
+    Les pièces sont automatiquement tournées pour trouver une orientation valide.
+    Chaque pièce ne peut être utilisée que 2 fois maximum.
+    
+    Args:
+        gestionnaire_pieces (GestionnairePieces): Gestionnaire du pool de pièces
+        position_future (tuple): Position où la pièce sera placée
+        grid_pieces (dict): Dictionnaire des pièces déjà placées
+        grid_rows (int): Nombre de lignes
+        grid_cols (int): Nombre de colonnes
+        direction_entree (str): Direction d'où vient le joueur ("haut", "bas", "gauche", "droite")
+        
+    Returns:
+        list: Liste de 3 pièces valides et orientées (ou moins si insuffisant)
+    """
+    # Récupérer les pièces disponibles (moins de 2 utilisations)
+    pieces_tirables = gestionnaire_pieces.get_pieces_disponibles()
     
     if len(pieces_tirables) < 3:
-        return pieces_tirables.copy()
+        # Si moins de 3 pièces disponibles, retourner ce qu'on peut
+        pieces_valides = []
+        for p in pieces_tirables:
+            piece_copie = p.copier()
+            orientation_requise = {"haut": "S", "bas": "N", "gauche": "E", "droite": "W"}.get(direction_entree)
+            est_valide, angle = verifier_validite_piece_avec_rotation(
+                piece_copie, position_future, grid_pieces, grid_rows, grid_cols, orientation_requise
+            )
+            if est_valide:
+                piece_copie.appliquer_rotation(angle)
+                pieces_valides.append(piece_copie)
+        return pieces_valides
+    
+    # Mapping direction d'entrée -> orientation requise dans la pièce
+    direction_vers_orientation_map = {
+        "haut": "S",
+        "bas": "N",
+        "gauche": "E",
+        "droite": "W"
+    }
+    orientation_entree_requise = direction_vers_orientation_map.get(direction_entree)
     
     # Pondération : rareté 1=100 chances, 2=50, 3=25
     pieces_ponderees = []
@@ -238,36 +368,56 @@ def tirer_3_pieces_aleatoires(pieces_disponibles):
         poids = 100 // piece.rarete
         pieces_ponderees.extend([piece] * poids)
     
-    # Tirage sans doublons
+    # Tirage avec validation et rotation
     pieces_tirees = []
     pieces_deja_tirees = []
+    tentatives_max = 300
+    tentatives = 0
     
-    for _ in range(3):
-        if not pieces_ponderees:
+    while len(pieces_tirees) < 3 and tentatives < tentatives_max:
+        tentatives += 1
+        
+        # Filtrer les pièces déjà tirées
+        pieces_disponibles_tirage = [
+            p for p in pieces_ponderees 
+            if p.nom not in pieces_deja_tirees
+        ]
+        
+        if not pieces_disponibles_tirage:
             break
         
-        pieces_disponibles = [p for p in pieces_ponderees if p.nom not in pieces_deja_tirees]
-        
-        if not pieces_disponibles:
-            break
-            
-        piece_choisie = random.choice(pieces_disponibles)
+        # Tirer une pièce
+        piece_choisie = random.choice(pieces_disponibles_tirage)
         piece_copie = piece_choisie.copier()
-        pieces_tirees.append(piece_copie)
-        pieces_deja_tirees.append(piece_choisie.nom)
+        
+        # Vérifier si la pièce est valide (en testant toutes les rotations)
+        est_valide, angle_rotation = verifier_validite_piece_avec_rotation(
+            piece_copie, position_future, grid_pieces, grid_rows, grid_cols, orientation_entree_requise
+        )
+        
+        if est_valide:
+            # Appliquer la rotation trouvée
+            piece_copie.appliquer_rotation(angle_rotation)
+            pieces_tirees.append(piece_copie)
+            pieces_deja_tirees.append(piece_choisie.nom)
     
     return pieces_tirees
 
-def joueur_tire_pieces(toutes_les_pieces):
-    """Permet au joueur de tirer 3 pièces.
+def joueur_tire_pieces(gestionnaire_pieces, position_future, grid_pieces, grid_rows, grid_cols, direction_entree):
+    """Permet au joueur de tirer 3 pièces valides.
     
     Args:
-        toutes_les_pieces (list): Liste de toutes les pièces du jeu
+        gestionnaire_pieces (GestionnairePieces): Gestionnaire du pool de pièces
+        position_future (tuple): Position où la pièce sera placée
+        grid_pieces (dict): Dictionnaire des pièces déjà placées
+        grid_rows (int): Nombre de lignes
+        grid_cols (int): Nombre de colonnes
+        direction_entree (str): Direction d'où vient le joueur
         
     Returns:
-        list: Liste de 3 pièces tirées
+        list: Liste de 3 pièces tirées, valides et orientées
     """
-    return tirer_3_pieces_aleatoires(toutes_les_pieces)
+    return tirer_3_pieces_aleatoires(gestionnaire_pieces, position_future, grid_pieces, grid_rows, grid_cols, direction_entree)
 
 def direction_vers_orientation(direction):
     """Convertit une direction de mouvement en orientation cardinale.
@@ -366,10 +516,10 @@ def placer_objets_aleatoires(pieces_disponibles, objets_disponibles, joueur):
         
         # Objets garantis pour certaines pièces
         if piece.nom == "Den":
-            piece.ajouter_objet(gemme)
+            piece.ajouter_objet(gemme.copier())
         elif piece.nom == "Closet":
-            objet1 = random.choice(objets_disponibles)
-            objet2 = random.choice(objets_disponibles)
+            objet1 = random.choice(objets_disponibles).copier()
+            objet2 = random.choice(objets_disponibles).copier()
             piece.ajouter_objet(objet1)
             piece.ajouter_objet(objet2)
         
@@ -385,17 +535,17 @@ def placer_objets_aleatoires(pieces_disponibles, objets_disponibles, joueur):
                     poids = []
                     for obj in objets_disponibles:
                         # Objets métalliques: clé, gemme
-                        if obj.nom in ["cle", "gemme"]:
+                        if obj.nom in ["clé", "gemme"]:
                             poids.append(obj.chance_app * 2)  # Double la chance
                         else:
                             poids.append(obj.chance_app)
                     
-                    objet = random.choices(objets_disponibles, weights=poids)[0]
+                    objet = random.choices(objets_disponibles, weights=poids)[0].copier()
                 else:
                     objet = random.choices(
                         objets_disponibles, 
                         weights=[obj.chance_app for obj in objets_disponibles]
-                    )[0]
+                    )[0].copier()
                 
                 piece.ajouter_objet(objet)
                 piece.a_objet = True
@@ -407,39 +557,59 @@ def appliquer_effets_pieces_garantis(piece, joueur):
     Args:
         piece (Piece): La pièce dont les effets doivent être appliqués
         joueur (Joueur): Le joueur qui reçoit les effets
+        
+    Returns:
+        str: Description de l'objet trouvé, ou None
     """
     # Bedroom: le joueur gagne 2 pas
     if piece.nom == "Bedroom":
         joueur.ajouter_pas(2)
-        print(f"Vous avez gagné 2 pas dans la bedroom")
+        return "2 pas"
     
     # Pantry: le joueur gagne 4 or
     elif piece.nom == "Pantry":
         joueur.ajouter_or(4)
-        print(f"Vous avez trouvé 4 d'or dans la pantry")
+        return "4 d'or"
     
     # Chapel: le joueur perd 1 or
     elif piece.nom == "Chapel":
         if joueur.or_ > 0:
             joueur.utiliser_or(1)
-            print(f"Vous avez perdu 1 d'or dans la chapel")
+            return None  # Pas d'affichage pour les pertes
     
     # Rumpus Room: le joueur gagne 8 or
     elif piece.nom == "Rumpus Room":
         joueur.ajouter_or(8)
-        print(f"Vous avez trouvé 8 d'or dans la rumpus room")
+        return "8 d'or"
 
     # Nook: le joueur gagne une clé
     elif piece.nom == "Nook":
         joueur.ajouter_cle()
-        print(f"Vous avez trouvé une clé dans la nook")
+        return "1 clé"
 
     # Trophy Room: le joueur gagne 8 gemmes
     elif piece.nom == "Trophy Room":
         joueur.ajouter_gemmes(8)
-        print(f"Vous avez trouvé 8 gemmes dans la trophy room")
+        return "8 gemmes"
 
     # Vault: le joueur gagne 40 or
     elif piece.nom == "Vault":
         joueur.ajouter_or(40)
-        print(f"Vous avez trouvé 40 d'or dans la vault")
+        return "40 d'or"
+    
+    return None
+
+
+def retirer_objets_uniques_de_toutes_pieces(grid_pieces, nom_objet):
+    """Retire tous les objets uniques d'un certain type de toutes les pièces.
+    
+    Args:
+        grid_pieces (dict): Dictionnaire des pièces placées
+        nom_objet (str): Nom de l'objet unique à retirer
+    """
+    for piece in grid_pieces.values():
+        objets_a_garder = []
+        for objet in piece.objets:
+            if objet.nom != nom_objet:
+                objets_a_garder.append(objet)
+        piece.objets = objets_a_garder

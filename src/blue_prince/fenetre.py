@@ -40,14 +40,13 @@ def init_window(grid_rows: int, grid_cols: int, cell_size: int, sidebar_width: i
 
 def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_cols, cell_w, cell_h,
                 game_width, sidebar_width, total_width, total_height,
-                colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None):
+                colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None, texte_objets_trouves=None):
     """Affiche tous les éléments du jeu.
     """
     WHITE = colors.get('WHITE', (255,255,255))
     BLACK = colors.get('BLACK', (0,0,0))
     GREY = colors.get('GREY', (200,200,200))
     BLUE = colors.get('BLUE', (50,100,200))
-
     win.fill(WHITE)
 
     # Grille de jeu (inchangée)
@@ -150,6 +149,38 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     else:
         no_preview_text = font.render("Aucun aperçu", True, BLACK)
         win.blit(no_preview_text, (preview_rect.x + 10, preview_rect.y + 10))
+
+    # Affichage des objets trouvés dans la pièce actuelle (DÉPLACÉ ICI)
+    if texte_objets_trouves:
+        objets_font = pygame.font.SysFont("arial", 16)
+        
+        # Position : en dessous de l'image de la pièce
+        objets_y = preview_rect.bottom + 5
+        objets_x = preview_rect.x
+        
+        # Découper le texte si trop long
+        max_width = preview_size
+        mots = texte_objets_trouves.split()
+        lignes = []
+        ligne_actuelle = ""
+        
+        for mot in mots:
+            test_ligne = ligne_actuelle + " " + mot if ligne_actuelle else mot
+            test_surface = objets_font.render(test_ligne, True, BLACK)
+            if test_surface.get_width() <= max_width:
+                ligne_actuelle = test_ligne
+            else:
+                if ligne_actuelle:
+                    lignes.append(ligne_actuelle)
+                ligne_actuelle = mot
+        
+        if ligne_actuelle:
+            lignes.append(ligne_actuelle)
+        
+        # Afficher chaque ligne
+        for i, ligne in enumerate(lignes):
+            texte_surface = objets_font.render(ligne, True, BLACK)
+            win.blit(texte_surface, (objets_x, objets_y + i * 20))
 
     # Section menu/sélection
     # Le menu commence après la fin de la zone d'inventaire/image (info_y_end)

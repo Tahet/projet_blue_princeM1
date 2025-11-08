@@ -3,30 +3,10 @@ import sys
 from pieces import joueur_tire_pieces, placer_piece_si_possible, placer_objets_aleatoires
 
 def mouvement(joueur, preview_direction, grid_rows, grid_cols, 
-              toutes_les_pieces, pieces_tirees, en_attente_selection, 
+              gestionnaire_pieces, pieces_tirees, en_attente_selection, 
               piece_selectionnee_index, grid_pieces, objets_disponibles):
-    """Gère les entrées clavier pour le mouvement et la sélection de pièces.
+    """Gère les entrées clavier pour le mouvement et la sélection de pièces."""
     
-    Deux modes de fonctionnement :
-    - Mode normal : ZQSD pour choisir une direction, Espace pour confirmer
-    - Mode sélection : Z/S pour naviguer, F pour relancer (si dé disponible), Espace pour valider
-    
-    Args:
-        joueur (Joueur): Instance du joueur
-        preview_direction (str): Direction actuellement prévisualisée
-        grid_rows (int): Nombre de lignes de la grille
-        grid_cols (int): Nombre de colonnes de la grille
-        toutes_les_pieces (list): Liste de toutes les pièces du jeu
-        pieces_tirees (list): Liste des 3 pièces tirées
-        en_attente_selection (bool): True si en mode sélection
-        piece_selectionnee_index (int): Index de la pièce sélectionnée (0-2)
-        grid_pieces (dict): Dictionnaire (col, row) -> Piece
-        objets_disponibles (list): Liste des objets disponibles
-        
-    Returns:
-        tuple: (preview_direction, en_attente_selection, pieces_tirees, 
-                piece_selectionnee_index, grid_pieces)
-    """
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -44,18 +24,24 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                 elif event.key == pygame.K_f and joueur.des > 0:
                     joueur.des -= 1
                     
-                    # Nouveau tirage
-                    pieces_tirees = joueur_tire_pieces(toutes_les_pieces)
+                    # Calculer la position future
+                    temp_pos = list(joueur.position)
+                    if preview_direction == "haut":
+                        dest_pos = (temp_pos[0], temp_pos[1] - 1)
+                    elif preview_direction == "bas":
+                        dest_pos = (temp_pos[0], temp_pos[1] + 1)
+                    elif preview_direction == "gauche":
+                        dest_pos = (temp_pos[0] - 1, temp_pos[1])
+                    elif preview_direction == "droite":
+                        dest_pos = (temp_pos[0] + 1, temp_pos[1])
                     
-                    for piece in pieces_tirees:
-                        piece.changer_orientation(preview_direction)
+                    # Nouveau tirage avec filtrage et rotation automatique
+                    pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction)
                     
                     piece_selectionnee_index = 0
-                    for i, piece in enumerate(pieces_tirees, 1):
-                        cout = getattr(piece, 'cout_gemmes', 0)
                 
                 # Validation avec Espace
-                elif event.key == pygame.K_SPACE and piece_selectionnee_index is not None:
+                elif event.key == pygame.K_SPACE and piece_selectionnee_index is not None and len(pieces_tirees) > 0:
                     piece_choisie = pieces_tirees[piece_selectionnee_index]
                     
                     if placer_piece_si_possible(piece_choisie, joueur, preview_direction):
@@ -64,6 +50,9 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             nouvelle_pos = tuple(joueur.position)
                             piece_choisie.visitee = True
                             grid_pieces[nouvelle_pos] = piece_choisie
+                            
+                            # Marquer la pièce comme utilisée dans le gestionnaire
+                            gestionnaire_pieces.utiliser_piece(piece_choisie.nom)
                             
                             # Placer des objets aléatoires dans la pièce nouvellement placée
                             placer_objets_aleatoires([piece_choisie], objets_disponibles, joueur)
@@ -153,16 +142,15 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                 else:
                                     print("Erreur de déplacement")
                         else:
-                            # Case vide : tirage de 3 pièces
-                            pieces_tirees = joueur_tire_pieces(toutes_les_pieces)
+                            # Case vide : tirage de 3 pièces avec filtrage intelligent et rotation automatique
+                            pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction)
                             
-                            for piece in pieces_tirees:
-                                piece.changer_orientation(preview_direction)
-                            
-                            en_attente_selection = True
-                            piece_selectionnee_index = 0
-                            for i, piece in enumerate(pieces_tirees, 1):
-                                cout = getattr(piece, 'cout_gemmes', 0)
+                            if len(pieces_tirees) > 0:
+                                en_attente_selection = True
+                                piece_selectionnee_index = 0
+                            else:
+                                print("Aucune pièce valide disponible !")
+                                preview_direction = None
                     else:
                         preview_direction = None
                 
