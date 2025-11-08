@@ -591,8 +591,35 @@ def appliquer_effets_pieces_garantis(piece, joueur):
     elif piece.nom == "Trophy Room":
         joueur.ajouter_gemmes(8)
         return "8 gemmes"
+    
+    # Locksmith: le joueur achète 1 clé pour 5 or
+    elif piece.nom == "Locksmith":
+        if joueur.or_ >= 5:
+            joueur.utiliser_or(5)
+            joueur.ajouter_cle()
+            return "1 clé (acheté pour 5 or)"
+        else:
+            return None  # Pas assez d'or pour acheter
+        
+    # Kitchen: le joueur achète une banane pour 3 d'or
+    elif piece.nom == "Kitchen":
+        if joueur.or_ >= 3:
+            joueur.utiliser_or(3)
+            joueur.ajouter_pas(5)
+            return "banane achetée pour 3 d'or"
+        else:
+            return None  # Pas assez d'or pour acheter
 
-    # Vault: le joueur gagne 40 or
+    # Weight Room: le joueur divise ses pas par 2
+    elif piece.nom == "Weight Room":
+        if not joueur.diviser_pas_par_2:
+            joueur.pas = int(joueur.pas/2)
+            joueur.diviser_pas_par_2 = True
+            return "Pas divisés par 2"
+        else:
+            return None  # Effet déjà appliqué
+
+    # Vault: le joueur gagne 40 d'or
     elif piece.nom == "Vault":
         joueur.ajouter_or(40)
         return "40 d'or"
