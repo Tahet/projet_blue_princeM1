@@ -4,7 +4,8 @@ from pieces import joueur_tire_pieces, placer_piece_si_possible, placer_objets_a
 
 def mouvement(joueur, preview_direction, grid_rows, grid_cols, 
               gestionnaire_pieces, pieces_tirees, en_attente_selection, 
-              piece_selectionnee_index, grid_pieces, objets_disponibles):
+              piece_selectionnee_index, grid_pieces, objets_disponibles,
+              en_attente_validation_porte, niveau_verrou_porte):
     """Gère les entrées clavier pour le mouvement et la sélection de pièces."""
     
     for event in pygame.event.get():
@@ -12,8 +13,48 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
+            # Mode validation de porte (nouveau)
+            if en_attente_validation_porte:
+                if event.key == pygame.K_SPACE:
+                    # Vérifier si le joueur a les ressources nécessaires
+                    if niveau_verrou_porte == 0:
+                        # Porte ouverte, pas besoin de ressources
+                        en_attente_validation_porte = False
+                        return (preview_direction, en_attente_selection, pieces_tirees, 
+                                piece_selectionnee_index, grid_pieces, False, 0, True)
+                    elif niveau_verrou_porte == 1:
+                        # Porte verrouillée : kit OU 1 clé
+                        if joueur.kit_crochetage == 1:
+                            # Utiliser le kit (pas de consommation, permanent)
+                            en_attente_validation_porte = False
+                            return (preview_direction, en_attente_selection, pieces_tirees, 
+                                    piece_selectionnee_index, grid_pieces, False, 0, True)
+                        elif joueur.cles >= 1:
+                            joueur.cles -= 1
+                            en_attente_validation_porte = False
+                            return (preview_direction, en_attente_selection, pieces_tirees, 
+                                    piece_selectionnee_index, grid_pieces, False, 0, True)
+                        else:
+                            print("Pas assez de ressources ! (Kit ou 1 clé requis)")
+                    elif niveau_verrou_porte == 2:
+                        # Porte verrouillée à double tour : 2 clés obligatoires
+                        if joueur.cles >= 2:
+                            joueur.cles -= 2
+                            en_attente_validation_porte = False
+                            return (preview_direction, en_attente_selection, pieces_tirees, 
+                                    piece_selectionnee_index, grid_pieces, False, 0, True)
+                        else:
+                            print("Pas assez de clés ! (2 clés requises)")
+                
+                elif event.key == pygame.K_ESCAPE:
+                    # Annuler la sélection de cette porte
+                    en_attente_validation_porte = False
+                    preview_direction = None
+                    return (preview_direction, en_attente_selection, pieces_tirees, 
+                            piece_selectionnee_index, grid_pieces, False, 0, False)
+            
             # Mode sélection de pièce
-            if en_attente_selection:
+            elif en_attente_selection:
                 # Sélection avec Z (haut) et S (bas)
                 if event.key == pygame.K_z and piece_selectionnee_index > 0:
                     piece_selectionnee_index -= 1
@@ -53,6 +94,20 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             
                             # Marquer la pièce comme utilisée dans le gestionnaire
                             gestionnaire_pieces.utiliser_piece(piece_choisie.nom)
+                            
+                            # NOUVEAU : Initialiser les verrous de la pièce
+                            gestionnaire_pieces.initialiser_verrous_piece(piece_choisie, nouvelle_pos[1])
+                            
+                            # Marquer la porte par laquelle on est entré comme ouverte
+                            direction_entree_map = {
+                                "haut": "S",
+                                "bas": "N",
+                                "gauche": "E",
+                                "droite": "W"
+                            }
+                            direction_entree = direction_entree_map.get(preview_direction)
+                            if direction_entree and direction_entree in piece_choisie.portes_ouvertes:
+                                piece_choisie.portes_ouvertes[direction_entree] = True
                             
                             # Placer des objets aléatoires dans la pièce nouvellement placée
                             placer_objets_aleatoires([piece_choisie], objets_disponibles, joueur)
@@ -117,13 +172,25 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             
                             if orientation_requise not in piece_actuelle.directions:
                                 preview_direction = None
-                                continue
+                                return (preview_direction, en_attente_selection, pieces_tirees, 
+                                        piece_selectionnee_index, grid_pieces, False, 0, False)
+                            
+                            # NOUVEAU : Vérifier le verrou de cette porte
+                            if hasattr(piece_actuelle, 'verrous') and orientation_requise in piece_actuelle.verrous:
+                                # Si la porte n'est pas déjà ouverte
+                                if not piece_actuelle.portes_ouvertes.get(orientation_requise, False):
+                                    niveau_verrou = piece_actuelle.verrous[orientation_requise]
+                                    if niveau_verrou is not None:
+                                        # Passer en mode validation de porte
+                                        en_attente_validation_porte = True
+                                        return (preview_direction, en_attente_selection, pieces_tirees, 
+                                                piece_selectionnee_index, grid_pieces, True, niveau_verrou, False)
                         
                         # Vérifier si la destination existe déjà
                         if dest_pos in grid_pieces:
                             piece_destination = grid_pieces[dest_pos]
                             
-                            # Gestion de l'Antechamber verrouillée
+                            # Gestion de l'Antechamber verrouillée (ancien système, garde-le pour compatibilité)
                             if piece_destination.nom == "Antechamber" and not piece_destination.visitee:
                                 if joueur.cles > 0:
                                     joueur.cles -= 1
@@ -138,6 +205,19 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                 # Pièce déjà visitée : déplacement simple
                                 if joueur.deplacer(preview_direction):
                                     joueur.utiliser_pas()
+                                    
+                                    # Marquer la porte comme ouverte dans la pièce de destination
+                                    direction_entree_map = {
+                                        "haut": "S",
+                                        "bas": "N",
+                                        "gauche": "E",
+                                        "droite": "W"
+                                    }
+                                    direction_entree = direction_entree_map.get(preview_direction)
+                                    if direction_entree and hasattr(piece_destination, 'portes_ouvertes'):
+                                        if direction_entree in piece_destination.portes_ouvertes:
+                                            piece_destination.portes_ouvertes[direction_entree] = True
+                                    
                                     preview_direction = None
                                 else:
                                     print("Erreur de déplacement")
@@ -158,4 +238,5 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                 elif event.key == pygame.K_ESCAPE:
                     preview_direction = None
 
-    return preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, grid_pieces
+    return (preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, 
+            grid_pieces, en_attente_validation_porte, niveau_verrou_porte, False)

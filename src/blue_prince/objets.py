@@ -90,13 +90,13 @@ class Objet:
         return None
 
 # Objets globaux
-cle = Objet('clé', 1)
+cle = Objet('clé', 7)
 de = Objet('dé', 2)
-gemme = Objet('gemme', 1)
+gemme = Objet('gemme', 2)
 pomme = Objet('pomme', 1)
 banane = Objet('banane', 1)
 detecteur_metaux = Objet('detecteur de metaux', 2, unique=True)
-patte_lapin = Objet('patte de lapin', 3, unique=True)
+patte_lapin = Objet('patte de lapin', 2, unique=True)
 kit_crochetage = Objet('kit de crochetage', 2, unique=True)
 
 objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]

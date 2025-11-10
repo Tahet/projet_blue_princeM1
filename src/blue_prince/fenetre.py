@@ -40,7 +40,8 @@ def init_window(grid_rows: int, grid_cols: int, cell_size: int, sidebar_width: i
 
 def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_cols, cell_w, cell_h,
                 game_width, sidebar_width, total_width, total_height,
-                colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None, texte_objets_trouves=None):
+                colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None, 
+                texte_objets_trouves=None, message_porte=None):
     """Affiche tous les éléments du jeu.
     """
     WHITE = colors.get('WHITE', (255,255,255))
@@ -86,15 +87,15 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     pygame.draw.rect(win, BLACK, (sidebar_x, 0, sidebar_width, total_height), 2)
 
     # Constantes pour la nouvelle mise en page
-    info_y_end = 280  # Augmenté pour avoir plus d'espace
-    TEXT_PADDING = 20 # Marge à gauche et droite
-    TEXT_ZONE_WIDTH = 240 # Augmenté pour les textes plus longs
+    info_y_end = 280
+    TEXT_PADDING = 20
+    TEXT_ZONE_WIDTH = 240
 
     # Section inventaire (Lignes de texte)
     debut_texte = sidebar_x + TEXT_PADDING
     
     text = font.render("Inventaire:", True, BLACK)
-    win.blit(text, (debut_texte, 20)) # Position 20, 20 inchangée
+    win.blit(text, (debut_texte, 20))
 
     # Utiliser une police plus petite pour l'inventaire
     info_font = pygame.font.SysFont("arial", 18)
@@ -111,29 +112,21 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     ]
     for i, line in enumerate(info_lines):
         txt = info_font.render(line, True, BLACK)
-        win.blit(txt, (debut_texte, 50 + i * 25)) # Espacement réduit à 25
+        win.blit(txt, (debut_texte, 50 + i * 25))
 
     pos_text = info_font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, BLACK)
-    win.blit(pos_text, (debut_texte, 250)) # Ajusté
+    win.blit(pos_text, (debut_texte, 250))
 
-    # Section aperçu de la pièce actuelle (Déplacée et redimensionnée)
-    
-    # Nouvelle position X (après le texte de l'inventaire)
+    # Section aperçu de la pièce actuelle
     preview_x = debut_texte + TEXT_ZONE_WIDTH
-    preview_y = 20 # Commence en haut, aligné avec "Inventaire:"
+    preview_y = 20
     
-    # Calcul de la taille de l'aperçu (carré)
-    # Hauteur maximale de l'image (alignée sur info_y_end = 250)
-    MAX_IMAGE_HEIGHT = info_y_end - preview_y - TEXT_PADDING # 250 - 20 - 20 = 210
-    
-    # Largeur restante dans la sidebar: sidebar_width - (Marge gauche + Largeur texte + Marge droite)
+    MAX_IMAGE_HEIGHT = info_y_end - preview_y - TEXT_PADDING
     remaining_width = sidebar_width - (TEXT_PADDING + TEXT_ZONE_WIDTH + TEXT_PADDING) 
     
-    # La taille de l'aperçu sera le minimum entre la hauteur max et la largeur restante
     preview_size = min(MAX_IMAGE_HEIGHT, remaining_width)
-    preview_size = max(0, preview_size) # Assure une taille positive
+    preview_size = max(0, preview_size)
 
-    # Création du rectangle de l'aperçu avec les nouvelles coordonnées et taille
     preview_rect = pygame.Rect(preview_x, preview_y, preview_size, preview_size)
     pygame.draw.rect(win, GREY, preview_rect)
     pygame.draw.rect(win, BLACK, preview_rect, 2)
@@ -150,52 +143,71 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
         no_preview_text = font.render("Aucun aperçu", True, BLACK)
         win.blit(no_preview_text, (preview_rect.x + 10, preview_rect.y + 10))
 
-    # Affichage des objets trouvés dans la pièce actuelle (DÉPLACÉ ICI)
+    # Affichage des objets trouvés dans la pièce actuelle
     if texte_objets_trouves:
-        objets_font = pygame.font.SysFont("arial", 16)
+        objets_font = pygame.font.SysFont("arial", 14)
         
-        # Position : en dessous de l'image de la pièce
         objets_y = preview_rect.bottom + 5
         objets_x = preview_rect.x
         
-        # Découper le texte si trop long
         max_width = preview_size
-        mots = texte_objets_trouves.split()
-        lignes = []
-        ligne_actuelle = ""
+        toutes_les_lignes = []
         
-        for mot in mots:
-            test_ligne = ligne_actuelle + " " + mot if ligne_actuelle else mot
-            test_surface = objets_font.render(test_ligne, True, BLACK)
-            if test_surface.get_width() <= max_width:
-                ligne_actuelle = test_ligne
-            else:
-                if ligne_actuelle:
-                    lignes.append(ligne_actuelle)
-                ligne_actuelle = mot
+        messages = texte_objets_trouves.split('\n')
         
-        if ligne_actuelle:
-            lignes.append(ligne_actuelle)
+        for message in messages:
+            mots = message.split()
+            ligne_actuelle = ""
+            
+            for mot in mots:
+                test_ligne = ligne_actuelle + " " + mot if ligne_actuelle else mot
+                test_surface = objets_font.render(test_ligne, True, BLACK)
+                if test_surface.get_width() <= max_width:
+                    ligne_actuelle = test_ligne
+                else:
+                    if ligne_actuelle:
+                        toutes_les_lignes.append(ligne_actuelle)
+                    ligne_actuelle = mot
+            
+            if ligne_actuelle:
+                toutes_les_lignes.append(ligne_actuelle)
         
-        # Afficher chaque ligne
-        for i, ligne in enumerate(lignes):
+        for i, ligne in enumerate(toutes_les_lignes):
             texte_surface = objets_font.render(ligne, True, BLACK)
-            win.blit(texte_surface, (objets_x, objets_y + i * 20))
+            win.blit(texte_surface, (objets_x, objets_y + i * 18))
 
     # Section menu/sélection
-    # Le menu commence après la fin de la zone d'inventaire/image (info_y_end)
-    menu_y_start = info_y_end + TEXT_PADDING # 250 + 20
+    menu_y_start = info_y_end + TEXT_PADDING
     menu_rect = pygame.Rect(sidebar_x, menu_y_start, sidebar_width, total_height - menu_y_start)
     
-    # Dessin du cadre du menu
     pygame.draw.rect(win, BLACK, (sidebar_x, menu_y_start - 1, sidebar_width, total_height - menu_y_start + 1), 2)
 
-    if en_attente_selection and pieces_tirees:
-        # Affichage des 3 pièces disponibles (inchangé)
+    # NOUVEAU : Affichage du message de porte
+    if message_porte:
+        # Fond semi-transparent sur toute la zone de menu
+        overlay = pygame.Surface((sidebar_width, total_height - menu_y_start))
+        overlay.set_alpha(230)
+        overlay.fill((240, 240, 240))
+        win.blit(overlay, (sidebar_x, menu_y_start))
+        
+        # Afficher le message de la porte
+        porte_font = pygame.font.SysFont("arial", 18)
+        lignes = message_porte.split('\n')
+        
+        y_offset = menu_rect.y + 20
+        for ligne in lignes:
+            if ligne.strip():  # Ignorer les lignes vides
+                texte = porte_font.render(ligne, True, BLACK)
+                # Centrer le texte
+                x_offset = sidebar_x + (sidebar_width - texte.get_width()) // 2
+                win.blit(texte, (x_offset, y_offset))
+                y_offset += 30
+
+    elif en_attente_selection and pieces_tirees:
+        # Affichage des 3 pièces disponibles
         titre = font.render("Choisissez une piece:", True, BLACK)
         win.blit(titre, (menu_rect.x + 10, menu_rect.y + 10))
         
-        # Instructions en haut (inchangées)
         small_font = pygame.font.SysFont("arial", 16)
         if joueur.des > 0:
             instruction = small_font.render(f"Z/S: Navigation | F: Relancer ({joueur.des} de)", True, BLACK)
@@ -236,7 +248,7 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
             
             piece_y += piece_size + 50
     else:
-        # Menu normal (inchangé)
+        # Menu normal
         menu_text = font.render("Menu Actions", True, BLACK)
         win.blit(menu_text, (menu_rect.x + 10, menu_rect.y + 10))
         

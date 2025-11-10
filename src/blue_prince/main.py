@@ -3,7 +3,7 @@ import sys
 import controles as controles
 from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution
 from joueur import Joueur
-from pieces import Piece, charger_pieces_blue_prince, placer_objets_aleatoires, appliquer_effets_pieces_garantis, retirer_objets_uniques_de_toutes_pieces
+from pieces import Piece, charger_pieces_blue_prince, placer_objets_aleatoires, appliquer_effets_pieces_garantis, retirer_objets_uniques_de_toutes_pieces, joueur_tire_pieces
 from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage, cle, de
 from victoire import verifier_victoire, afficher_victoire, verifier_defaite, afficher_defaite, afficher_texte_quitter
 from rarete import GestionnairePieces
@@ -38,6 +38,10 @@ def main():
     pieces_tirees = []
     piece_selectionnee_index = None
     en_attente_selection = False
+    # NOUVEAU : Variables pour le système de portes
+    en_attente_validation_porte = False
+    niveau_verrou_porte = 0
+    porte_validee = False
     jeu_termine = False
 
     # Charger toutes les pièces
@@ -56,18 +60,22 @@ def main():
     if entrance_hall:
         entrance_hall.visitee = True
         grid_pieces[(2, 8)] = entrance_hall
+        # Initialiser les verrous de l'Entrance Hall
+        gestionnaire_pieces.initialiser_verrous_piece(entrance_hall, 8)
 
     # Placement de l'Antechamber (objectif verrouillé)
     antechamber = next((p for p in toutes_les_pieces if p.nom == "Antechamber"), None)
     if antechamber:
         antechamber.visitee = False
         grid_pieces[(2, 0)] = antechamber
+        # Initialiser les verrous de l'Antechamber
+        gestionnaire_pieces.initialiser_verrous_piece(antechamber, 0)
 
-    # Ensemble pour suivre les pièces déjà visitées et ayant eu leurs effets appliqués
-    pieces_effets_appliques = set()
-    
-    # Dictionnaire pour stocker les objets trouvés par pièce (pour l'affichage)
+    # Dictionnaire pour marquer les pièces visitées
     objets_trouves_par_piece = {}
+    
+    # Variable pour savoir quelle pièce affiche actuellement un message
+    piece_actuelle_affichage = None
     
     # Position précédente pour détecter les changements de pièce
     position_precedente = tuple(joueur.position)
@@ -100,11 +108,71 @@ def main():
             continue
 
         # Gérer les mouvements et interactions avec la grille
-        preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, grid_pieces = controles.mouvement(
+        (preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, 
+         grid_pieces, en_attente_validation_porte, niveau_verrou_porte, porte_validee) = controles.mouvement(
             joueur, preview_direction, GRID_ROWS, GRID_COLS, 
             gestionnaire_pieces, pieces_tirees, en_attente_selection, 
-            piece_selectionnee_index, grid_pieces, objets_disponibles
+            piece_selectionnee_index, grid_pieces, objets_disponibles,
+            en_attente_validation_porte, niveau_verrou_porte
         )
+
+        # Si la porte a été validée, passer au tirage des 3 pièces
+        if porte_validee and preview_direction is not None:
+            # Calculer la position future
+            temp_pos = list(joueur.position)
+            dest_pos = None
+            
+            if preview_direction == "haut":
+                dest_pos = (temp_pos[0], temp_pos[1] - 1)
+            elif preview_direction == "bas":
+                dest_pos = (temp_pos[0], temp_pos[1] + 1)
+            elif preview_direction == "gauche":
+                dest_pos = (temp_pos[0] - 1, temp_pos[1])
+            elif preview_direction == "droite":
+                dest_pos = (temp_pos[0] + 1, temp_pos[1])
+            
+            # Marquer la porte actuelle comme ouverte
+            piece_actuelle = grid_pieces.get(tuple(joueur.position))
+            if piece_actuelle:
+                direction_sortie_map = {
+                    "haut": "N",
+                    "bas": "S",
+                    "gauche": "W",
+                    "droite": "E"
+                }
+                direction_sortie = direction_sortie_map.get(preview_direction)
+                if direction_sortie and hasattr(piece_actuelle, 'portes_ouvertes'):
+                    piece_actuelle.portes_ouvertes[direction_sortie] = True
+            
+            # Si la destination n'existe pas, tirer les 3 pièces
+            if dest_pos and dest_pos not in grid_pieces:
+                pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, GRID_ROWS, GRID_COLS, preview_direction)
+                
+                if len(pieces_tirees) > 0:
+                    en_attente_selection = True
+                    piece_selectionnee_index = 0
+                else:
+                    print("Aucune pièce valide disponible !")
+                    preview_direction = None
+            # Si la destination existe déjà, déplacer le joueur
+            elif dest_pos and dest_pos in grid_pieces:
+                if joueur.deplacer(preview_direction):
+                    joueur.utiliser_pas()
+                    
+                    # Marquer la porte comme ouverte dans la pièce de destination
+                    piece_destination = grid_pieces[dest_pos]
+                    direction_entree_map = {
+                        "haut": "S",
+                        "bas": "N",
+                        "gauche": "E",
+                        "droite": "W"
+                    }
+                    direction_entree = direction_entree_map.get(preview_direction)
+                    if direction_entree and hasattr(piece_destination, 'portes_ouvertes'):
+                        if direction_entree in piece_destination.portes_ouvertes:
+                            piece_destination.portes_ouvertes[direction_entree] = True
+                    
+                    preview_direction = None
 
         pos_tuple = tuple(joueur.position)
         
@@ -118,10 +186,9 @@ def main():
                 
                 # Collecter les objets dans la pièce (une seule fois par pièce)
                 if pos_tuple not in objets_trouves_par_piece:
-                    messages_trouves = []
                     objets_trouves_noms = []
                     
-                    # Appliquer les effets garantis de la pièce (première visite seulement pour l'affichage)
+                    # Appliquer les effets garantis de la pièce (première visite seulement)
                     message_effet = appliquer_effets_pieces_garantis(piece_actuelle, joueur)
                     if message_effet:
                         objets_trouves_noms.append(message_effet)
@@ -140,37 +207,53 @@ def main():
                                     deja_possede = True
                                 
                                 if deja_possede:
-                                    objet.is_collected = True  # Marquer comme collecté pour ne plus le voir
-                                    continue  # Passer à l'objet suivant
+                                    objet.is_collected = True
+                                    continue
                             
                             nom_affiche = objet.appliquer_effet(joueur)
                             if nom_affiche:
                                 objets_trouves_noms.append(nom_affiche)
                                 
-                                # Si c'est un objet unique, le retirer de toutes les autres pièces
                                 if objet.unique:
                                     retirer_objets_uniques_de_toutes_pieces(grid_pieces, objet.nom)
                     
-                    # Créer un seul message avec tous les objets trouvés
+                    # Stocker le message pour cette pièce
                     if objets_trouves_noms:
                         message_final = f"Vous avez trouvé : {', '.join(objets_trouves_noms)}"
-                        messages_trouves.append(message_final)
-                        objets_trouves_par_piece[pos_tuple] = messages_trouves
+                        objets_trouves_par_piece[pos_tuple] = message_final
+                        piece_actuelle_affichage = pos_tuple  # Activer l'affichage pour cette pièce
+                    else:
+                        objets_trouves_par_piece[pos_tuple] = True  # Marquer comme visitée sans message
+                        piece_actuelle_affichage = None
                 else:
-                    # Si on revient dans une pièce déjà visitée, appliquer quand même les effets garantis (mais pas d'affichage)
-                    appliquer_effets_pieces_garantis(piece_actuelle, joueur)
-
-        # Préparer le texte des objets trouvés pour l'affichage
+                    # Pièce déjà visitée, désactiver l'affichage
+                    piece_actuelle_affichage = None
+        
+        # Afficher le message si on est dans la pièce d'affichage active
         texte_objets_trouves = None
-        if pos_tuple in objets_trouves_par_piece:
-            messages = objets_trouves_par_piece[pos_tuple]
-            texte_objets_trouves = "\n".join(messages)
+        if piece_actuelle_affichage == pos_tuple and pos_tuple in objets_trouves_par_piece:
+            if isinstance(objets_trouves_par_piece[pos_tuple], str):
+                texte_objets_trouves = objets_trouves_par_piece[pos_tuple]
+
+        # Préparer le message de validation de porte
+        message_porte = None
+        if en_attente_validation_porte:
+            if niveau_verrou_porte == 0:
+                message_porte = "Cette porte est Ouverte\n\nAppuyez sur Espace pour passer"
+            elif niveau_verrou_porte == 1:
+                if joueur.kit_crochetage == 1:
+                    message_porte = "Cette porte est Verrouillée\n\nUtiliser le Kit de Crochetage\n(Appuyez sur Espace)"
+                else:
+                    message_porte = f"Cette porte est Verrouillée\n\nUtiliser 1 clé\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+            elif niveau_verrou_porte == 2:
+                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 2 clés\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
 
         # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
         fenetre_draw_window(WIN, joueur, grid_pieces, preview_direction, GRID_ROWS, GRID_COLS, cell_w, cell_h,
                             GAME_WIDTH, SIDEBAR_WIDTH, WIDTH, HEIGHT,
-                            colors, font, pieces_tirees, en_attente_selection, piece_selectionnee_index, texte_objets_trouves)
+                            colors, font, pieces_tirees, en_attente_selection, piece_selectionnee_index, 
+                            texte_objets_trouves, message_porte)
 
 if __name__ == "__main__":
     main()
