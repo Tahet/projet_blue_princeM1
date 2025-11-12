@@ -184,24 +184,33 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Entrance_Hall.webp", "name": "Entrance Hall", "connexions": ["N", "E", "W"]},
         {"file": "Antechamber.webp", "name": "Antechamber", "connexions": ["N", "E", "S", "W"], "cles_nes": ["N", "E", "S", "W"]},
         {"file": "Bedroom.webp", "name": "Bedroom", "connexions": ["S", "W"]},
-        {"file": "Closet.webp", "name": "Closet", "connexions": ["S"], 'rarete':'3'},
-        {"file": "Commissary.webp", "name": "Commissary", "connexions": ["S","W"], 'rarete':'2', 'cout_gemmes': 1},
+        {"file": "Closet.webp", "name": "Closet", "connexions": ["S"], "rarete": 3},
+        {"file": "Commissary.webp", "name": "Commissary", "connexions": ["S", "W"], "rarete": 2, "cout_gemmes": 1},
         {"file": "Corridor.webp", "name": "Corridor", "connexions": ["N", "S"]},
         {"file": "Den.webp", "name": "Den", "connexions": ["E", "S", "W"]},
-        {"file": "East_Wing_Hall.webp", "name": "East Wing Hall", "connexions": ["E", "S", "W"], 'cout_gemmes': 0},
-        {"file": "Locksmith.webp", "name": "Locksmith", "connexions": ["S"], 'rarete':'2', 'cout_gemmes': 1},
-        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["N"], 'rarete':'2', 'cout_gemmes': 2},
+        {"file": "East_Wing_Hall.webp", "name": "East Wing Hall", "connexions": ["E", "S", "W"], "cout_gemmes": 0},
+        {"file": "Locksmith.webp", "name": "Locksmith", "connexions": ["S"], "rarete": 2, "cout_gemmes": 1},
+        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["N"], "rarete": 2, "cout_gemmes": 2},
         {"file": "Passageway.webp", "name": "Passageway", "connexions": ["N", "E", "S", "W"]},
-        {"file": "Rumpus_Room.webp", "name": "Rumpus Room", "connexions": ["N", "S"], 'cout_gemmes': 1},
-        {"file": "Vault.webp", "name": "Vault", "connexions": ["S"], 'rarete':'3'},
-        {"file": "Weight_Room.webp", "name": "Weight Room", "connexions": ["N", "E", "S", "W"], 'rarete':'2'},
+        {"file": "Rumpus_Room.webp", "name": "Rumpus Room", "connexions": ["N", "S"], "cout_gemmes": 1},
+        {"file": "Vault.webp", "name": "Vault", "connexions": ["S"], "rarete": 3},
+        {"file": "Weight_Room.webp", "name": "Weight Room", "connexions": ["N", "E", "S", "W"], "rarete": 2},
         {"file": "Pantry.tiff", "name": "Pantry", "connexions": ["W", "S"]},
-        {"file": "Lavatory.webp", "name": "Lavatory", "connexions": ["S"], "rarete": '2'},
-        {"file": "Nook.tiff", "name": "Nook", "connexions": ["S", "W"],"rarete": '2'},
-        {"file": "Trophy_Room.tiff", "name": "Trophy Room", "connexions": ["S", "W"],"rarete": '2'},
-        {"file": "Kitchen.webp", "name": "Kitchen", "connexions":["S","W"],'cout_gemmes': 1},
-        {"file": "Drawing_Room.webp", "name": "Drawing Room","connexions":["S","W","E"],'cout_gemmes': 1},
-        {"file": "Chapel.webp", "name": "Chapel","connexions":["S","W","E"]},
+        {"file": "Nook.tiff", "name": "Nook", "connexions": ["S", "W"], "rarete": 2},
+        {"file": "Trophy_Room.tiff", "name": "Trophy Room", "connexions": ["S", "W"], "rarete": 2},
+        {"file": "Kitchen.webp", "name": "Kitchen", "connexions": ["S", "W"], "cout_gemmes": 1},
+        {"file": "Drawing_Room.webp", "name": "Drawing Room", "connexions": ["S", "W", "E"], "cout_gemmes": 1},
+        {"file": "Chapel.webp", "name": "Chapel", "connexions": ["S", "W", "E"]},
+        {"file": "Archives.png", "name": "Archives", "connexions": ["S", "W", "E", "N"], "rarete": 3, "cout_gemmes": 0},
+        {"file": "Ballroom.png", "name": "Ballroom", "connexions": ["S", "N"], "rarete": 1, "cout_gemmes": 2},
+        {"file": "Gallery.png", "name": "Gallery", "connexions": ["S", "N"], "rarete": 1, "cout_gemmes": 0},
+        {"file": "Garage.png", "name": "Garage", "connexions": ["S"], "rarete": 3, "cout_gemmes": 1},
+        {"file": "Great_Hall.png", "name": "Great Hall", "connexions": ["S", "W", "E", "N"], "rarete": 3, "cout_gemmes": 0},
+        {"file": "Showroom.png", "name": "Showroom", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
+        {"file": "Spare_Room.webp", "name": "Spare Room", "connexions": ["S", "N"], "rarete": 1, "cout_gemmes": 0},
+        {"file": "Storeroom.webp", "name": "Storeroom", "connexions": ["S", "W", "E", "N"], "rarete": 2, "cout_gemmes": 0},
+        {"file": "The_Kennel.png", "name": "The Kennel", "connexions": ["S", "N"], "rarete": 3, "cout_gemmes": 0},
+        {"file": "Veranda.png", "name": "Veranda", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
     ]
     
     pieces = []
@@ -567,6 +576,11 @@ def placer_objets_aleatoires(pieces_disponibles, objets_disponibles, joueur):
             objet2 = random.choice(objets_disponibles).copier()
             piece.ajouter_objet(objet1)
             piece.ajouter_objet(objet2)
+        
+        elif piece.nom == "Storeroom":
+            joueur.ajouter_or(1)
+            joueur.ajouter_gemmes(1)
+            joueur.ajouter_cle()
         
         # Objets aléatoires pour les autres pièces
         elif not piece.a_objet:
