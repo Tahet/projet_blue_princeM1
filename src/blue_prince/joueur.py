@@ -11,7 +11,7 @@ class Joueur:
     """
     
     def __init__(self):
-        self.pas = 50
+        self.pas = 65
         self.or_ = 0
         self.gemmes = 2
         self.cles = 1

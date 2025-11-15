@@ -1,8 +1,12 @@
 import pygame
 import sys
+import os
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+
+# Obtenir le répertoire du fichier actuel
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def verifier_victoire(joueur, grid_pieces):
     """Vérifie si le joueur a atteint l'Antechamber."""
@@ -13,7 +17,8 @@ def verifier_victoire(joueur, grid_pieces):
 
 def afficher_victoire(win, width, height):
     """Affiche une image de victoire à l'écran."""
-    image_victoire = pygame.image.load("Python/projet_blue_princeM1/src/blue_prince/data/Victory.webp").convert_alpha()
+    chemin_image = os.path.join(SCRIPT_DIR, "data", "Victory.webp")
+    image_victoire = pygame.image.load(chemin_image).convert_alpha()
     image_victoire = pygame.transform.scale(image_victoire, (width, height))
     win.blit(image_victoire, (0, 0))
     pygame.display.update()
@@ -24,7 +29,8 @@ def verifier_defaite(joueur):
 
 def afficher_defaite(win, width, height):
     """Affiche une image de défaite à l'écran."""
-    image_defaite = pygame.image.load("Python/projet_blue_princeM1/src/blue_prince/data/defeat.png").convert_alpha()
+    chemin_image = os.path.join(SCRIPT_DIR, "data", "defeat.png")
+    image_defaite = pygame.image.load(chemin_image).convert_alpha()
     image_defaite = pygame.transform.scale(image_defaite, (width, height))
     win.blit(image_defaite, (0, 0))
     pygame.display.update()
