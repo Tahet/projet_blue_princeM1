@@ -99,7 +99,7 @@ class Objet:
         return None
 
 # Objets globaux
-cle = Objet('clé', 1)
+cle = Objet('clé', 2)
 de = Objet('dé', 2)
 gemme = Objet('gemme', 2)
 pomme = Objet('pomme', 3)
