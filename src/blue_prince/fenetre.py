@@ -97,6 +97,33 @@ def obtenir_effet_piece(nom_piece):
     }
     return effets.get(nom_piece, None)
 
+def draw_rounded_rect(surface, color, rect, border_radius=10, width=0):
+    """Dessine un rectangle avec coins arrondis.
+    
+    Args:
+        surface: Surface pygame
+        color: Couleur RGB
+        rect: Rectangle pygame.Rect
+        border_radius: Rayon des coins arrondis
+        width: Épaisseur (0 pour remplissage)
+    """
+    if border_radius == 0:
+        pygame.draw.rect(surface, color, rect, width)
+        return
+    
+    # Limiter le rayon aux dimensions du rectangle
+    border_radius = min(border_radius, rect.width // 2, rect.height // 2)
+    
+    # Créer une surface avec transparence
+    rect_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    
+    if width == 0:  # Remplissage
+        pygame.draw.rect(rect_surface, color, (0, 0, rect.width, rect.height), border_radius=border_radius)
+    else:  # Bordure
+        pygame.draw.rect(rect_surface, color, (0, 0, rect.width, rect.height), width, border_radius=border_radius)
+    
+    surface.blit(rect_surface, rect.topleft)
+
 def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_cols, cell_w, cell_h,
                 game_width, sidebar_width, total_width, total_height,
                 colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None, 
@@ -107,6 +134,7 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     BLACK = colors.get('BLACK', (0,0,0))
     GREY = colors.get('GREY', (200,200,200))
     BLUE = colors.get('BLUE', (50,100,200))
+    DARK_BLUE = (30, 80, 150)
     win.fill(WHITE)
 
     # Grille de jeu (inchangée)
@@ -146,21 +174,36 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     pygame.draw.rect(win, BLACK, (sidebar_x, 0, sidebar_width, total_height), 2)
 
     # Constantes pour la nouvelle mise en page
-    info_y_end = 280
-    TEXT_PADDING = 20
+    info_y_end = 275  # Réduit pour moins d'espace blanc
+    TEXT_PADDING = 15
     TEXT_ZONE_WIDTH = 240
+
+    # ========== SECTION INVENTAIRE ==========
+    # Fond dégradé pour la sidebar (section inventaire)
+    sidebar_bg = pygame.Surface((sidebar_width, info_y_end))
+    sidebar_bg.fill((240, 248, 255))  # Alice blue - couleur très légère
+    win.blit(sidebar_bg, (sidebar_x, 0))
+    
+    # Ligne de démarcation en bas de l'inventaire
+    pygame.draw.line(win, DARK_BLUE, (sidebar_x + 2, info_y_end - 1), (sidebar_x + sidebar_width - 2, info_y_end - 1), 2)
 
     # Section inventaire (Lignes de texte avec images)
     debut_texte = sidebar_x + TEXT_PADDING
     
-    text = font.render("Inventaire:", True, BLACK)
-    win.blit(text, (debut_texte, 20))
+    # Titre de l'inventaire avec un petit fond coloré
+    inv_title_bg = pygame.Rect(debut_texte - 5, 8, 220, 35)
+    pygame.draw.rect(win, (200, 220, 255), inv_title_bg, border_radius=8)
+    pygame.draw.rect(win, DARK_BLUE, inv_title_bg, 2, border_radius=8)
+    
+    inv_title_font = pygame.font.SysFont("arial", 20, bold=True)
+    text = inv_title_font.render("Inventaire", True, DARK_BLUE)
+    win.blit(text, (debut_texte, 12))
 
     # Utiliser une police plus petite pour l'inventaire
-    info_font = pygame.font.SysFont("arial", 16)
+    info_font = pygame.font.SysFont("arial", 14)
     
     # Taille des petites images d'objets
-    icon_size = 20
+    icon_size = 22
     
     # Données d'inventaire avec les clés pour accéder aux images
     info_items = [
@@ -175,30 +218,31 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     ]
     
     for i, (label, value, img_key) in enumerate(info_items):
-        y_pos = 50 + i * 25
-        x_text = debut_texte + icon_size + 5
+        y_pos = 52 + i * 25
+        x_text = debut_texte + icon_size + 8
         
         # Afficher l'image si disponible
         if img_key in IMAGES_OBJETS:
             try:
                 img = IMAGES_OBJETS[img_key]
                 resized_img = pygame.transform.scale(img, (icon_size, icon_size))
-                win.blit(resized_img, (debut_texte, y_pos))
+                win.blit(resized_img, (debut_texte, y_pos - 2))
             except Exception as e:
                 print(f"Erreur affichage image {img_key}: {e}")
         
         # Afficher le texte
-        txt = info_font.render(f"{label} : {value}", True, BLACK)
+        txt = info_font.render(f"{label} : {value}", True, (40, 40, 80))
         win.blit(txt, (x_text, y_pos))
 
-    pos_text = info_font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, BLACK)
-    win.blit(pos_text, (debut_texte, 250))
+    pos_font = pygame.font.SysFont("arial", 12, italic=True)
+    pos_text = pos_font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, (100, 100, 120))
+    win.blit(pos_text, (debut_texte, 252))
 
-    # Section aperçu de la pièce actuelle
+    # Section aperçu de la pièce actuelle (à côté de l'inventaire)
     preview_x = debut_texte + TEXT_ZONE_WIDTH
-    preview_y = 20
+    preview_y = 15
     
-    MAX_IMAGE_HEIGHT = info_y_end - preview_y - TEXT_PADDING
+    MAX_IMAGE_HEIGHT = info_y_end - preview_y - 5
     remaining_width = sidebar_width - (TEXT_PADDING + TEXT_ZONE_WIDTH + TEXT_PADDING) 
     
     preview_size = min(MAX_IMAGE_HEIGHT, remaining_width)
@@ -254,10 +298,18 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
             win.blit(texte_surface, (objets_x, objets_y + i * 18))
 
     # Section menu/sélection
-    menu_y_start = info_y_end + TEXT_PADDING
+    menu_y_start = info_y_end
     menu_rect = pygame.Rect(sidebar_x, menu_y_start, sidebar_width, total_height - menu_y_start)
     
-    pygame.draw.rect(win, BLACK, (sidebar_x, menu_y_start - 1, sidebar_width, total_height - menu_y_start + 1), 2)
+    # Fond bleu clair pour la zone de menu (sans trait de séparation)
+    menu_bg_color = (220, 235, 255)  # Bleu très clair
+    pygame.draw.rect(win, menu_bg_color, menu_rect)
+    
+    # Bordure colorée uniquement sur les côtés (pas de séparation avec l'inventaire)
+    pygame.draw.line(win, DARK_BLUE, (sidebar_x, menu_y_start), (sidebar_x + sidebar_width, menu_y_start), 0)  # Pas de ligne du haut
+    pygame.draw.line(win, DARK_BLUE, (sidebar_x, menu_y_start), (sidebar_x, total_height), 3)  # Gauche
+    pygame.draw.line(win, DARK_BLUE, (sidebar_x + sidebar_width, menu_y_start), (sidebar_x + sidebar_width, total_height), 3)  # Droite
+    pygame.draw.line(win, DARK_BLUE, (sidebar_x, total_height - 1), (sidebar_x + sidebar_width, total_height - 1), 3)  # Bas
 
     # NOUVEAU : Affichage du message de porte
     if message_porte:
@@ -282,20 +334,25 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
 
     elif en_attente_selection and pieces_tirees:
         # Affichage des 3 pièces disponibles
-        titre = font.render("Choisissez une piece:", True, BLACK)
+        titre_font = pygame.font.SysFont("arial", 22, bold=True)
+        titre = titre_font.render("Choisissez une pièce:", True, DARK_BLUE)
         win.blit(titre, (menu_rect.x + 10, menu_rect.y + 10))
         
-        small_font = pygame.font.SysFont("arial", 16)
+        small_font = pygame.font.SysFont("arial", 14)
         if joueur.des > 0:
-            instruction = small_font.render(f"Z/S: Navigation | F: Relancer ({joueur.des} de)", True, BLACK)
+            instruction = small_font.render(f"Z/S: Navigation | F: Relancer ({joueur.des} dé)", True, (60, 60, 60))
         else:
-            instruction = small_font.render("Z/S: Navigation | Espace: Valider", True, BLACK)
+            instruction = small_font.render("Z/S: Navigation | Espace: Valider", True, (60, 60, 60))
         win.blit(instruction, (menu_rect.x + 10, menu_rect.y + 35))
         
-        piece_font = pygame.font.SysFont("arial", 18)
-        effet_font = pygame.font.SysFont("arial", 14)
+        piece_font = pygame.font.SysFont("arial", 18, bold=True)
+        effet_font = pygame.font.SysFont("arial", 13)
         piece_y = menu_rect.y + 60
         piece_size = 60
+        
+        LIGHT_GRAY = (240, 240, 245)
+        HIGHLIGHT_BLUE = (180, 210, 255)
+        CARD_BORDER = (100, 140, 200)
         
         for i, piece in enumerate(pieces_tirees):
             piece_x = menu_rect.x + 10
@@ -306,10 +363,18 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
             
             piece_rect = pygame.Rect(piece_x, piece_y, sidebar_width - 20, hauteur_carte)
             
+            # Fond de la carte
             if i == piece_selectionnee_index:
-                pygame.draw.rect(win, (200, 220, 255), piece_rect)
+                pygame.draw.rect(win, HIGHLIGHT_BLUE, piece_rect)  # Bleu highlighted
+                border_color = DARK_BLUE
+                border_width = 3
+            else:
+                pygame.draw.rect(win, LIGHT_GRAY, piece_rect)
+                border_color = CARD_BORDER
+                border_width = 2
             
-            pygame.draw.rect(win, BLACK, piece_rect, 2)
+            # Bordure de la carte
+            pygame.draw.rect(win, border_color, piece_rect, border_width)
             
             if piece.icon_img:
                 try:
@@ -318,32 +383,34 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
                 except Exception as e:
                     print(f"Erreur affichage miniature: {e}")
             
-            num_text = piece_font.render(f"{i+1}.", True, BLACK)
+            num_text = piece_font.render(f"{i+1}.", True, DARK_BLUE)
             win.blit(num_text, (piece_x + piece_size + 15, piece_y + 5))
             
             nom_text = piece_font.render(piece.nom, True, BLACK)
             win.blit(nom_text, (piece_x + piece_size + 15, piece_y + 25))
             
             cout = getattr(piece, 'cout_gemmes', 0)
-            cout_color = BLACK if joueur.gemmes >= cout else (255, 0, 0)
-            cout_text = piece_font.render(f"Cout: {cout} gemmes", True, cout_color)
+            cout_color = DARK_BLUE if joueur.gemmes >= cout else (200, 50, 50)
+            cout_text = pygame.font.SysFont("arial", 14).render(f"Coût: {cout} gemmes", True, cout_color)
             win.blit(cout_text, (piece_x + piece_size + 15, piece_y + 45))
             
             # NOUVEAU : Afficher l'effet de la pièce s'il existe
             if effet_piece:
-                effet_text = effet_font.render(effet_piece, True, (0, 100, 0))
+                effet_text = effet_font.render(effet_piece, True, (0, 120, 0))
                 win.blit(effet_text, (piece_x + piece_size + 15, piece_y + 70))
             
             piece_y += hauteur_carte + 10
     else:
         # Menu normal
-        menu_text = font.render("Menu Actions", True, BLACK)
+        menu_title_font = pygame.font.SysFont("arial", 20, bold=True)
+        menu_text = menu_title_font.render("Menu Actions", True, DARK_BLUE)
         win.blit(menu_text, (menu_rect.x + 10, menu_rect.y + 10))
         
-        instruction = pygame.font.SysFont("arial", 16).render("ZQSD: Choisir direction", True, BLACK)
-        win.blit(instruction, (menu_rect.x + 10, menu_rect.y + 40))
+        instruction_font = pygame.font.SysFont("arial", 15)
+        instruction = instruction_font.render("ZQSD: Choisir direction", True, (60, 60, 60))
+        win.blit(instruction, (menu_rect.x + 10, menu_rect.y + 45))
         
-        instruction2 = pygame.font.SysFont("arial", 16).render("Espace: Confirmer", True, BLACK)
-        win.blit(instruction2, (menu_rect.x + 10, menu_rect.y + 60))
+        instruction2 = instruction_font.render("Espace: Confirmer", True, (60, 60, 60))
+        win.blit(instruction2, (menu_rect.x + 10, menu_rect.y + 70))
 
     pygame.display.update()
