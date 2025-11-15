@@ -37,14 +37,14 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                         else:
                             print("Pas assez de ressources ! (Kit ou 1 clé requis)")
                     elif niveau_verrou_porte == 2:
-                        # Porte verrouillée à double tour : 2 clés obligatoires
-                        if joueur.cles >= 2:
-                            joueur.cles -= 2
+                        # Porte verrouillée à double tour : 1 clé obligatoire (kit ne fonctionne pas)
+                        if joueur.cles >= 1:
+                            joueur.cles -= 1
                             en_attente_validation_porte = False
                             return (preview_direction, en_attente_selection, pieces_tirees, 
                                     piece_selectionnee_index, grid_pieces, False, 0, True)
                         else:
-                            print("Pas assez de clés ! (2 clés requises)")
+                            print("Pas assez de clés ! (1 clé requise, kit ne fonctionne pas)")
                 
                 elif event.key == pygame.K_ESCAPE:
                     # Annuler la sélection de cette porte

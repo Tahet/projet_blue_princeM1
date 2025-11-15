@@ -208,7 +208,7 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Great_Hall.png", "name": "Great Hall", "connexions": ["S", "W", "E", "N"], "rarete": 3, "cout_gemmes": 0},
         {"file": "Showroom.png", "name": "Showroom", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
         {"file": "Spare_Room.webp", "name": "Spare Room", "connexions": ["S", "N"], "rarete": 1, "cout_gemmes": 0},
-        {"file": "Storeroom.webp", "name": "Storeroom", "connexions": ["S", "W", "E", "N"], "rarete": 2, "cout_gemmes": 0},
+        {"file": "Storeroom.webp", "name": "Storeroom", "connexions": ["N"], "rarete": 2, "cout_gemmes": 0},
         {"file": "The_Kennel.png", "name": "The Kennel", "connexions": ["S", "N"], "rarete": 3, "cout_gemmes": 0},
         {"file": "Veranda.png", "name": "Veranda", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
     ]
@@ -321,11 +321,6 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             # Si la pièce au nord a une connexion Sud, la nouvelle pièce DOIT avoir Nord
             if "S" in piece_nord.directions:
                 contraintes["N"] = True
-            else:
-                contraintes["N"] = False
-    else:
-        # Bord supérieur de la grille : NE DOIT PAS avoir de connexion Nord
-        contraintes["N"] = False
     
     # Vérifier le Sud
     if row < grid_rows - 1:
@@ -334,11 +329,6 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_sud = grid_pieces[pos_sud]
             if "N" in piece_sud.directions:
                 contraintes["S"] = True
-            else:
-                contraintes["S"] = False
-    else:
-        # Bord inférieur de la grille : NE DOIT PAS avoir de connexion Sud
-        contraintes["S"] = False
     
     # Vérifier l'Est
     if col < grid_cols - 1:
@@ -347,11 +337,6 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_est = grid_pieces[pos_est]
             if "W" in piece_est.directions:
                 contraintes["E"] = True
-            else:
-                contraintes["E"] = False
-    else:
-        # Bord droit de la grille : NE DOIT PAS avoir de connexion Est
-        contraintes["E"] = False
     
     # Vérifier l'Ouest
     if col > 0:
@@ -360,11 +345,6 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_ouest = grid_pieces[pos_ouest]
             if "E" in piece_ouest.directions:
                 contraintes["W"] = True
-            else:
-                contraintes["W"] = False
-    else:
-        # Bord gauche de la grille : NE DOIT PAS avoir de connexion Ouest
-        contraintes["W"] = False
     
     return contraintes
 
@@ -577,11 +557,6 @@ def placer_objets_aleatoires(pieces_disponibles, objets_disponibles, joueur):
             piece.ajouter_objet(objet1)
             piece.ajouter_objet(objet2)
         
-        elif piece.nom == "Storeroom":
-            joueur.ajouter_or(1)
-            joueur.ajouter_gemmes(1)
-            joueur.ajouter_cle()
-        
         # Objets aléatoires pour les autres pièces
         elif not piece.a_objet:
             # Patte de lapin: 60% de chance au lieu de 40%
@@ -652,6 +627,18 @@ def appliquer_effets_pieces_garantis(piece, joueur):
     elif piece.nom == "Trophy Room":
         joueur.ajouter_gemmes(8)
         return "8 gemmes"
+    
+    # Garage: le joueur gagne 2 clés
+    elif piece.nom == "Garage":
+        joueur.cles += 2
+        return "2 clés"
+    
+    # Storeroom: le joueur gagne 1 or, 1 gemme et 1 clé
+    elif piece.nom == "Storeroom":
+        joueur.ajouter_or(1)
+        joueur.ajouter_gemmes(1)
+        joueur.ajouter_cle()
+        return "1 or, 1 gemme, 1 clé"
     
     # Locksmith: le joueur achète 1 clé pour 5 or
     elif piece.nom == "Locksmith":

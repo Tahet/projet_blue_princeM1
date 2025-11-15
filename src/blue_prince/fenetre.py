@@ -38,6 +38,33 @@ def init_window(grid_rows: int, grid_cols: int, cell_size: int, sidebar_width: i
 
     return win, game_width, sidebar_width, total_width, total_height
 
+def obtenir_effet_piece(nom_piece):
+    """Retourne l'effet garanti d'une pièce pour l'affichage.
+    
+    Args:
+        nom_piece (str): Nom de la pièce
+        
+    Returns:
+        str: Description de l'effet ou None
+    """
+    effets = {
+        "Bedroom": "Effet: +2 pas",
+        "Pantry": "Effet: +4 or",
+        "Chapel": "Effet: -1 or",
+        "Rumpus Room": "Effet: +8 or",
+        "Nook": "Effet: +1 clé",
+        "Trophy Room": "Effet: +8 gemmes",
+        "Garage": "Effet: +2 clés",
+        "Locksmith": "Effet: Acheter 1 clé pour 5 or",
+        "Kitchen": "Effet: Acheter banane pour 3 or (+5 pas)",
+        "Weight Room": "Effet: Pas divisés par 2",
+        "Vault": "Effet: +40 or",
+        "Den": "Effet: +1 gemme garantie",
+        "Closet": "Effet: 2 objets aléatoires",
+        "Storeroom": "Effet: +1 or, +1 gemme, +1 clé"
+    }
+    return effets.get(nom_piece, None)
+
 def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_cols, cell_w, cell_h,
                 game_width, sidebar_width, total_width, total_height,
                 colors, font, pieces_tirees=None, en_attente_selection=False, piece_selectionnee_index=None, 
@@ -216,12 +243,18 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
         win.blit(instruction, (menu_rect.x + 10, menu_rect.y + 35))
         
         piece_font = pygame.font.SysFont("arial", 18)
+        effet_font = pygame.font.SysFont("arial", 14)
         piece_y = menu_rect.y + 60
         piece_size = 60
         
         for i, piece in enumerate(pieces_tirees):
             piece_x = menu_rect.x + 10
-            piece_rect = pygame.Rect(piece_x, piece_y, sidebar_width - 20, piece_size + 40)
+            
+            # Calculer la hauteur de la carte en fonction de l'effet
+            effet_piece = obtenir_effet_piece(piece.nom)
+            hauteur_carte = piece_size + 60 if effet_piece else piece_size + 40
+            
+            piece_rect = pygame.Rect(piece_x, piece_y, sidebar_width - 20, hauteur_carte)
             
             if i == piece_selectionnee_index:
                 pygame.draw.rect(win, (200, 220, 255), piece_rect)
@@ -246,7 +279,12 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
             cout_text = piece_font.render(f"Cout: {cout} gemmes", True, cout_color)
             win.blit(cout_text, (piece_x + piece_size + 15, piece_y + 45))
             
-            piece_y += piece_size + 50
+            # NOUVEAU : Afficher l'effet de la pièce s'il existe
+            if effet_piece:
+                effet_text = effet_font.render(effet_piece, True, (0, 100, 0))
+                win.blit(effet_text, (piece_x + piece_size + 15, piece_y + 70))
+            
+            piece_y += hauteur_carte + 10
     else:
         # Menu normal
         menu_text = font.render("Menu Actions", True, BLACK)

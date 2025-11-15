@@ -161,6 +161,11 @@ def main():
                     
                     # Marquer la porte comme ouverte dans la pièce de destination
                     piece_destination = grid_pieces[dest_pos]
+                    
+                    # SPECIAL: Marquer l'Antechamber comme visitée pour déclencher la victoire
+                    if piece_destination.nom == "Antechamber":
+                        piece_destination.visitee = True
+                    
                     direction_entree_map = {
                         "haut": "S",
                         "bas": "N",
@@ -246,7 +251,7 @@ def main():
                 else:
                     message_porte = f"Cette porte est Verrouillée\n\nUtiliser 1 clé\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
             elif niveau_verrou_porte == 2:
-                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 2 clés\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 1 clé\n(Kit ne fonctionne pas)\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
 
         # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
