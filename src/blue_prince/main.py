@@ -4,7 +4,7 @@ import controles as controles
 from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution, charger_images_objets
 from joueur import Joueur
 from pieces import Piece, charger_pieces_blue_prince, placer_objets_aleatoires, appliquer_effets_pieces_garantis, retirer_objets_uniques_de_toutes_pieces, joueur_tire_pieces
-from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage, cle, de
+from objets import gemme, pomme, banane, gateau, sandwich, repas, detecteur_metaux, patte_lapin, kit_crochetage, cle, de
 from victoire import verifier_victoire, afficher_victoire, verifier_defaite, afficher_defaite, afficher_texte_quitter
 from rarete import GestionnairePieces
 
@@ -54,7 +54,7 @@ def main():
     gestionnaire_pieces = GestionnairePieces(toutes_les_pieces)
     
     # Liste des objets disponibles
-    objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
+    objets_disponibles = [cle, de, gemme, pomme, banane, gateau, sandwich, repas, detecteur_metaux, patte_lapin, kit_crochetage]
     
     grid_pieces = {}
     
@@ -147,9 +147,27 @@ def main():
                 if direction_sortie and hasattr(piece_actuelle, 'portes_ouvertes'):
                     piece_actuelle.portes_ouvertes[direction_sortie] = True
             
+            # NOUVEAU : Vérifier si la destination a une ouverture correspondante avant de continuer
+            if dest_pos and dest_pos in grid_pieces:
+                piece_destination = grid_pieces[dest_pos]
+                direction_entree_requise = {
+                    "haut": "S",
+                    "bas": "N",
+                    "gauche": "E",
+                    "droite": "W"
+                }
+                direction_requise = direction_entree_requise.get(preview_direction)
+                
+                # Si la pièce destination n'a pas d'ouverture correspondante, annuler
+                if direction_requise and direction_requise not in piece_destination.directions:
+                    print("Cette porte donne sur un mur ! Porte déverrouillée mais impossible de traverser.")
+                    preview_direction = None
+                    porte_validee = False
+                    continue
+            
             # Si la destination n'existe pas, tirer les 3 pièces
             if dest_pos and dest_pos not in grid_pieces:
-                pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, GRID_ROWS, GRID_COLS, preview_direction)
+                pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, GRID_ROWS, GRID_COLS, preview_direction, joueur)
                 
                 if len(pieces_tirees) > 0:
                     en_attente_selection = True
@@ -164,6 +182,11 @@ def main():
                     
                     # Marquer la porte comme ouverte dans la pièce de destination
                     piece_destination = grid_pieces[dest_pos]
+                    
+                    # SPECIAL: Marquer l'Antechamber comme visitée pour déclencher la victoire
+                    if piece_destination.nom == "Antechamber":
+                        piece_destination.visitee = True
+                    
                     direction_entree_map = {
                         "haut": "S",
                         "bas": "N",
@@ -249,7 +272,7 @@ def main():
                 else:
                     message_porte = f"Cette porte est Verrouillée\n\nUtiliser 1 clé\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
             elif niveau_verrou_porte == 2:
-                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 2 clés\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 1 clé\n(Kit ne fonctionne pas)\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
 
         # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
@@ -259,4 +282,4 @@ def main():
                             texte_objets_trouves, message_porte)
 
 if __name__ == "__main__":
-    main() 
+    main()

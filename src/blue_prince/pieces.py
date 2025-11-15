@@ -1,7 +1,7 @@
 import os
 import pygame
 import random
-from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage
+from objets import gemme, pomme, banane, gateau, sandwich, repas, detecteur_metaux, patte_lapin, kit_crochetage
 
 class Piece:
     """Représente une pièce du jeu avec ses connexions et propriétés.
@@ -190,7 +190,7 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Den.webp", "name": "Den", "connexions": ["E", "S", "W"]},
         {"file": "East_Wing_Hall.webp", "name": "East Wing Hall", "connexions": ["E", "S", "W"], "cout_gemmes": 0},
         {"file": "Locksmith.webp", "name": "Locksmith", "connexions": ["S"], "rarete": 2, "cout_gemmes": 1},
-        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["N"], "rarete": 2, "cout_gemmes": 2},
+        {"file": "Master_Bedroom.webp", "name": "Master Bedroom", "connexions": ["S"], "rarete": 2, "cout_gemmes": 2},
         {"file": "Passageway.webp", "name": "Passageway", "connexions": ["N", "E", "S", "W"]},
         {"file": "Rumpus_Room.webp", "name": "Rumpus Room", "connexions": ["N", "S"], "cout_gemmes": 1},
         {"file": "Vault.webp", "name": "Vault", "connexions": ["S"], "rarete": 3},
@@ -208,7 +208,7 @@ def charger_pieces_blue_prince(cell_w, cell_h, Piece):
         {"file": "Great_Hall.png", "name": "Great Hall", "connexions": ["S", "W", "E", "N"], "rarete": 3, "cout_gemmes": 0},
         {"file": "Showroom.png", "name": "Showroom", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
         {"file": "Spare_Room.webp", "name": "Spare Room", "connexions": ["S", "N"], "rarete": 1, "cout_gemmes": 0},
-        {"file": "Storeroom.webp", "name": "Storeroom", "connexions": ["N"], "rarete": 2, "cout_gemmes": 0},
+        {"file": "Storeroom.webp", "name": "Storeroom", "connexions": ["S"], "rarete": 2, "cout_gemmes": 0},
         {"file": "The_Kennel.png", "name": "The Kennel", "connexions": ["S", "N"], "rarete": 3, "cout_gemmes": 0},
         {"file": "Veranda.png", "name": "Veranda", "connexions": ["S", "N"], "rarete": 2, "cout_gemmes": 2},
     ]
@@ -322,6 +322,21 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             if "S" in piece_nord.directions:
                 contraintes["N"] = True
     
+    col, row = dest_pos
+    contraintes = {"N": None, "S": None, "E": None, "W": None}
+    
+    # Vérifier le Nord
+    if row > 0:
+        pos_nord = (col, row - 1)
+        if pos_nord in grid_pieces:
+            piece_nord = grid_pieces[pos_nord]
+            # Si la pièce au nord a une connexion Sud, la nouvelle pièce DOIT avoir Nord
+            if "S" in piece_nord.directions:
+                contraintes["N"] = True
+    else:
+        # Bord supérieur : NE DOIT PAS avoir de connexion Nord
+        contraintes["N"] = False
+    
     # Vérifier le Sud
     if row < grid_rows - 1:
         pos_sud = (col, row + 1)
@@ -329,6 +344,9 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_sud = grid_pieces[pos_sud]
             if "N" in piece_sud.directions:
                 contraintes["S"] = True
+    else:
+        # Bord inférieur : NE DOIT PAS avoir de connexion Sud
+        contraintes["S"] = False
     
     # Vérifier l'Est
     if col < grid_cols - 1:
@@ -337,6 +355,9 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_est = grid_pieces[pos_est]
             if "W" in piece_est.directions:
                 contraintes["E"] = True
+    else:
+        # Bord droit : NE DOIT PAS avoir de connexion Est
+        contraintes["E"] = False
     
     # Vérifier l'Ouest
     if col > 0:
@@ -345,8 +366,12 @@ def verifier_voisinage(dest_pos, grid_pieces, grid_rows, grid_cols):
             piece_ouest = grid_pieces[pos_ouest]
             if "E" in piece_ouest.directions:
                 contraintes["W"] = True
+    else:
+        # Bord gauche : NE DOIT PAS avoir de connexion Ouest
+        contraintes["W"] = False
     
     return contraintes
+
 
 def piece_respecte_contraintes(piece, contraintes):
     """Vérifie si une pièce respecte les contraintes de voisinage.
@@ -370,7 +395,7 @@ def piece_respecte_contraintes(piece, contraintes):
     
     return True
 
-def joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, direction):
+def joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, direction, joueur=None):
     """Tire 3 pièces compatibles avec la direction et le voisinage.
     
     Args:
@@ -380,6 +405,7 @@ def joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, gr
         grid_rows (int): Nombre de lignes
         grid_cols (int): Nombre de colonnes
         direction (str): Direction du mouvement
+        joueur (Joueur): Le joueur (optionnel, pour garantir pièce gratuite)
         
     Returns:
         list: Liste des 3 pièces compatibles (orientées automatiquement)
@@ -393,14 +419,22 @@ def joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, gr
     if len(pieces_disponibles) == 0:
         return []
     
-    # Filtrer et orienter les pièces valides
+    # Filtrer et orienter les pièces valides (système simple)
     pieces_valides = []
     for piece in pieces_disponibles:
-        piece_copie = piece.copier()
-        piece_copie.changer_orientation(direction)
-        
-        if piece_respecte_contraintes(piece_copie, contraintes):
-            pieces_valides.append(piece_copie)
+        # Essayer toutes les rotations possibles (0, 90, 180, 270 degrés)
+        for angle in [0, 90, 180, 270]:
+            piece_copie = piece.copier()
+            piece_copie.appliquer_rotation(angle)
+            
+            # Vérifier si cette rotation respecte les contraintes
+            if piece_respecte_contraintes(piece_copie, contraintes):
+                # Vérifier aussi que la pièce a bien la connexion d'entrée requise
+                orientation_entree = direction_vers_orientation(direction)
+                if orientation_entree in piece_copie.directions:
+                    # Prendre la première rotation valide
+                    pieces_valides.append(piece_copie)
+                    break  # Passer à la pièce suivante
     
     if len(pieces_valides) == 0:
         return []
@@ -444,6 +478,52 @@ def joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, gr
             break
     
     return pieces_tirees[:3]
+
+
+def garantir_piece_gratuite(pieces_tirees, pieces_valides, joueur):
+    """Garantit qu'il y a au moins une pièce gratuite si le joueur n'a pas de gemmes.
+    
+    Args:
+        pieces_tirees (list): Liste des pièces déjà tirées
+        pieces_valides (list): Liste de toutes les pièces valides disponibles
+        joueur (Joueur): Le joueur
+        
+    Returns:
+        list: Liste modifiée avec au moins une pièce gratuite
+    """
+    # Si le joueur a des gemmes, pas besoin de garantir une pièce gratuite
+    if joueur.gemmes > 0:
+        return pieces_tirees
+    
+    # Vérifier s'il y a déjà une pièce gratuite
+    a_piece_gratuite = any(getattr(p, 'cout_gemmes', 0) == 0 for p in pieces_tirees)
+    
+    if not a_piece_gratuite:
+        # Chercher une pièce gratuite dans les pièces valides
+        pieces_gratuites = [p for p in pieces_valides if getattr(p, 'cout_gemmes', 0) == 0]
+        
+        if pieces_gratuites:
+            # Remplacer la pièce la plus chère par une pièce gratuite
+            if len(pieces_tirees) > 0:
+                # Trouver l'index de la pièce la plus chère
+                index_plus_chere = 0
+                cout_max = getattr(pieces_tirees[0], 'cout_gemmes', 0)
+                
+                for i, piece in enumerate(pieces_tirees):
+                    cout = getattr(piece, 'cout_gemmes', 0)
+                    if cout > cout_max:
+                        cout_max = cout
+                        index_plus_chere = i
+                
+                # Remplacer par une pièce gratuite
+                piece_gratuite = random.choice(pieces_gratuites).copier()
+                pieces_tirees[index_plus_chere] = piece_gratuite
+            else:
+                # Si la liste est vide, ajouter une pièce gratuite
+                piece_gratuite = random.choice(pieces_gratuites).copier()
+                pieces_tirees.append(piece_gratuite)
+    
+    return pieces_tirees
 
 def direction_vers_orientation(direction):
     """Convertit une direction de mouvement en orientation cardinale requise.
@@ -628,10 +708,10 @@ def appliquer_effets_pieces_garantis(piece, joueur):
         joueur.ajouter_gemmes(8)
         return "8 gemmes"
     
-    # Garage: le joueur gagne 2 clés
+    # Garage: le joueur gagne 3 clés
     elif piece.nom == "Garage":
-        joueur.cles += 2
-        return "2 clés"
+        joueur.cles += 3
+        return "3 clés"
     
     # Storeroom: le joueur gagne 1 or, 1 gemme et 1 clé
     elif piece.nom == "Storeroom":

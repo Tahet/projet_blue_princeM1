@@ -77,7 +77,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                         dest_pos = (temp_pos[0] + 1, temp_pos[1])
                     
                     # Nouveau tirage avec filtrage et rotation automatique
-                    pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction)
+                    pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction, joueur)
                     
                     piece_selectionnee_index = 0
                 
@@ -94,6 +94,30 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             
                             # Marquer la pièce comme utilisée dans le gestionnaire
                             gestionnaire_pieces.utiliser_piece(piece_choisie.nom)
+                            
+                            # NOUVEAU : Nettoyer SEULEMENT les portes vers l'extérieur du plateau
+                            # On garde les portes qui donnent sur des murs de voisins (c'est normal dans Blue Prince)
+                            directions_a_garder = []
+                            col, row = nouvelle_pos
+                            
+                            for direction in piece_choisie.directions:
+                                garder = True
+                                
+                                # Supprimer SEULEMENT si la porte donne sur l'extérieur du plateau
+                                if direction == "N" and row == 0:
+                                    garder = False
+                                elif direction == "S" and row == grid_rows - 1:
+                                    garder = False
+                                elif direction == "W" and col == 0:
+                                    garder = False
+                                elif direction == "E" and col == grid_cols - 1:
+                                    garder = False
+                                
+                                if garder:
+                                    directions_a_garder.append(direction)
+                            
+                            # Mettre à jour les directions de la pièce
+                            piece_choisie.directions = directions_a_garder
                             
                             # NOUVEAU : Initialiser les verrous de la pièce
                             gestionnaire_pieces.initialiser_verrous_piece(piece_choisie, nouvelle_pos[1])
@@ -190,6 +214,22 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                         if dest_pos in grid_pieces:
                             piece_destination = grid_pieces[dest_pos]
                             
+                            # NOUVEAU : Vérifier si la pièce de destination a une ouverture correspondante
+                            direction_entree_requise = {
+                                "haut": "S",
+                                "bas": "N",
+                                "gauche": "E",
+                                "droite": "W"
+                            }
+                            direction_requise = direction_entree_requise.get(preview_direction)
+                            
+                            # Si la pièce destination n'a pas d'ouverture correspondante, bloquer
+                            if direction_requise and direction_requise not in piece_destination.directions:
+                                print(f"Cette porte donne sur un mur ! Impossible de passer.")
+                                preview_direction = None
+                                return (preview_direction, en_attente_selection, pieces_tirees, 
+                                        piece_selectionnee_index, grid_pieces, False, 0, False)
+                            
                             # Gestion de l'Antechamber verrouillée (ancien système, garde-le pour compatibilité)
                             if piece_destination.nom == "Antechamber" and not piece_destination.visitee:
                                 if joueur.cles > 0:
@@ -223,7 +263,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                     print("Erreur de déplacement")
                         else:
                             # Case vide : tirage de 3 pièces avec filtrage intelligent et rotation automatique
-                            pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction)
+                            pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction, joueur)
                             
                             if len(pieces_tirees) > 0:
                                 en_attente_selection = True

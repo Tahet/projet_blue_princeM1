@@ -42,7 +42,7 @@ class Objet:
         elif self.nom == "or" and nb_or <= joueur.or_:
             joueur.utiliser_or(nb_or)
     
-    def appliquer_effet(self, joueur):  # ← INDENTÉ ICI (même niveau que les autres méthodes)
+    def appliquer_effet(self, joueur):
         """Applique l'effet de l'objet au joueur, mais seulement si l'objet n'a pas encore été ramassé."""
         if not self.is_collected:
             # Vérifier si l'objet est unique et si le joueur l'a déjà
@@ -62,10 +62,19 @@ class Objet:
                 nom_affichage = "1 gemme"
             elif self.nom == 'pomme':
                 joueur.ajouter_pas(2)
-                nom_affichage = "1 pomme"
+                nom_affichage = "1 pomme (+2 pas)"
             elif self.nom == 'banane':
                 joueur.ajouter_pas(3)
-                nom_affichage = "1 banane"
+                nom_affichage = "1 banane (+3 pas)"
+            elif self.nom == 'gateau':
+                joueur.ajouter_pas(10)
+                nom_affichage = "1 gâteau (+10 pas)"
+            elif self.nom == 'sandwich':
+                joueur.ajouter_pas(15)
+                nom_affichage = "1 sandwich (+15 pas)"
+            elif self.nom == 'repas':
+                joueur.ajouter_pas(25)
+                nom_affichage = "1 repas (+25 pas)"
             elif self.nom == 'detecteur de metaux':
                 joueur.chance_metaux = 2
                 nom_affichage = "1 détecteur de métaux"
@@ -90,13 +99,16 @@ class Objet:
         return None
 
 # Objets globaux
-cle = Objet('clé', 9)
+cle = Objet('clé', 7)
 de = Objet('dé', 2)
 gemme = Objet('gemme', 2)
-pomme = Objet('pomme', 1)
-banane = Objet('banane', 1)
+pomme = Objet('pomme', 3)
+banane = Objet('banane', 2)
+gateau = Objet('gateau', 1)
+sandwich = Objet('sandwich', 1)
+repas = Objet('repas', 1)
 detecteur_metaux = Objet('detecteur de metaux', 2, unique=True)
 patte_lapin = Objet('patte de lapin', 2, unique=True)
 kit_crochetage = Objet('kit de crochetage', 2, unique=True)
 
-objets_disponibles = [cle, de, gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage]
+objets_disponibles = [cle, de, gemme, pomme, banane, gateau, sandwich, repas, detecteur_metaux, patte_lapin, kit_crochetage]
