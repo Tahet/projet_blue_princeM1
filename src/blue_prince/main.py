@@ -1,7 +1,7 @@
 import pygame
 import sys
 import controles as controles
-from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution
+from fenetre import init_window, draw_window as fenetre_draw_window , adapter_resolution, charger_images_objets
 from joueur import Joueur
 from pieces import Piece, charger_pieces_blue_prince, placer_objets_aleatoires, appliquer_effets_pieces_garantis, retirer_objets_uniques_de_toutes_pieces, joueur_tire_pieces
 from objets import gemme, pomme, banane, detecteur_metaux, patte_lapin, kit_crochetage, cle, de
@@ -32,6 +32,9 @@ font = pygame.font.SysFont("arial", 24)
 
 def main():
     """Boucle principale du jeu."""
+    # Charger les images des objets au démarrage
+    charger_images_objets()
+    
     clock = pygame.time.Clock()
     joueur = Joueur()
     preview_direction = None
@@ -161,11 +164,6 @@ def main():
                     
                     # Marquer la porte comme ouverte dans la pièce de destination
                     piece_destination = grid_pieces[dest_pos]
-                    
-                    # SPECIAL: Marquer l'Antechamber comme visitée pour déclencher la victoire
-                    if piece_destination.nom == "Antechamber":
-                        piece_destination.visitee = True
-                    
                     direction_entree_map = {
                         "haut": "S",
                         "bas": "N",
@@ -251,7 +249,7 @@ def main():
                 else:
                     message_porte = f"Cette porte est Verrouillée\n\nUtiliser 1 clé\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
             elif niveau_verrou_porte == 2:
-                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 1 clé\n(Kit ne fonctionne pas)\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 2 clés\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
 
         # Dessiner la fenêtre du jeu avec l'état actuel
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
@@ -261,4 +259,4 @@ def main():
                             texte_objets_trouves, message_porte)
 
 if __name__ == "__main__":
-    main()
+    main() 

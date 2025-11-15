@@ -2,6 +2,38 @@ import pygame
 import sys
 import os
 
+# Cache global pour les images des objets
+IMAGES_OBJETS = {}
+
+def charger_images_objets():
+    """Charge les images des objets depuis le dossier data."""
+    global IMAGES_OBJETS
+    
+    # Mappage des noms d'objets aux noms de fichiers
+    objets_mapping = {
+        "pas": "pas.png",
+        "or": "Or .webp",
+        "gemme": "Gemme.png",
+        "clé": "Clés.webp",
+        "dé": "Dés.png",
+        "kit_crochetage": "kit Crochetage.jpeg",
+        "detecteur_metaux": "Détecteur Métaux.png",
+        "patte_lapin": "Patte de lapin.png"
+    }
+    
+    data_dir = os.path.join(os.path.dirname(__file__), "data")
+    
+    for key, filename in objets_mapping.items():
+        filepath = os.path.join(data_dir, filename)
+        try:
+            if os.path.exists(filepath):
+                img = pygame.image.load(filepath)
+                IMAGES_OBJETS[key] = img
+            else:
+                print(f"Fichier image non trouvé: {filepath}")
+        except Exception as e:
+            print(f"Erreur chargement image {filename}: {e}")
+
 def adapter_resolution(pourcentage: float):
     """Récupère la résolution de l'écran et retourne une fraction spécifiée."""
     if not pygame.get_init():
@@ -118,28 +150,46 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     TEXT_PADDING = 20
     TEXT_ZONE_WIDTH = 240
 
-    # Section inventaire (Lignes de texte)
+    # Section inventaire (Lignes de texte avec images)
     debut_texte = sidebar_x + TEXT_PADDING
     
     text = font.render("Inventaire:", True, BLACK)
     win.blit(text, (debut_texte, 20))
 
     # Utiliser une police plus petite pour l'inventaire
-    info_font = pygame.font.SysFont("arial", 18)
+    info_font = pygame.font.SysFont("arial", 16)
     
-    info_lines = [
-        f"Pas : {joueur.pas}",
-        f"Or : {joueur.or_}",
-        f"Gemmes : {joueur.gemmes}",
-        f"Clés : {joueur.cles}",
-        f"Dés : {joueur.des}",
-        f"Kit Crochetage : {'Oui' if joueur.kit_crochetage > 0 else 'Non'}",
-        f"Detecteur Metaux : {'Oui' if joueur.chance_metaux > 1 else 'Non'}",
-        f"Patte de Lapin : {'Oui' if joueur.chance_objets > 1 else 'Non'}"
+    # Taille des petites images d'objets
+    icon_size = 20
+    
+    # Données d'inventaire avec les clés pour accéder aux images
+    info_items = [
+        ("Pas", joueur.pas, "pas"),
+        ("Or", joueur.or_, "or"),
+        ("Gemmes", joueur.gemmes, "gemme"),
+        ("Clés", joueur.cles, "clé"),
+        ("Dés", joueur.des, "dé"),
+        ("Kit Crochetage", "Oui" if joueur.kit_crochetage > 0 else "Non", "kit_crochetage"),
+        ("Detecteur Metaux", "Oui" if joueur.chance_metaux > 1 else "Non", "detecteur_metaux"),
+        ("Patte de Lapin", "Oui" if joueur.chance_objets > 1 else "Non", "patte_lapin")
     ]
-    for i, line in enumerate(info_lines):
-        txt = info_font.render(line, True, BLACK)
-        win.blit(txt, (debut_texte, 50 + i * 25))
+    
+    for i, (label, value, img_key) in enumerate(info_items):
+        y_pos = 50 + i * 25
+        x_text = debut_texte + icon_size + 5
+        
+        # Afficher l'image si disponible
+        if img_key in IMAGES_OBJETS:
+            try:
+                img = IMAGES_OBJETS[img_key]
+                resized_img = pygame.transform.scale(img, (icon_size, icon_size))
+                win.blit(resized_img, (debut_texte, y_pos))
+            except Exception as e:
+                print(f"Erreur affichage image {img_key}: {e}")
+        
+        # Afficher le texte
+        txt = info_font.render(f"{label} : {value}", True, BLACK)
+        win.blit(txt, (x_text, y_pos))
 
     pos_text = info_font.render(f"Position: ({joueur.position[0]}, {joueur.position[1]})", True, BLACK)
     win.blit(pos_text, (debut_texte, 250))
