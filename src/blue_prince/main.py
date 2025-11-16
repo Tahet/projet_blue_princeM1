@@ -32,7 +32,7 @@ font = pygame.font.SysFont("arial", 24)
 
 def main():
     """Boucle principale du jeu."""
-    # Charger les images des objets au démarrage
+    # Initialisation
     charger_images_objets()
     
     clock = pygame.time.Clock()
@@ -41,64 +41,50 @@ def main():
     pieces_tirees = []
     piece_selectionnee_index = None
     en_attente_selection = False
-    # NOUVEAU : Variables pour le système de portes
+    # Variables système de portes
     en_attente_validation_porte = False
     niveau_verrou_porte = 0
     porte_validee = False
     jeu_termine = False
 
-    # Charger toutes les pièces
+    # Setup du jeu
     toutes_les_pieces = charger_pieces_blue_prince(cell_w, cell_h, Piece)
-    
-    # Créer le gestionnaire de pièces avec système de deck limité
     gestionnaire_pieces = GestionnairePieces(toutes_les_pieces)
-    
-    # Liste des objets disponibles
     objets_disponibles = [cle, de, gemme, pomme, banane, gateau, sandwich, repas, detecteur_metaux, patte_lapin, kit_crochetage]
-    
     grid_pieces = {}
     
-    # Placement de l'Entrance Hall (départ)
+    # Placement pièces spéciales
     entrance_hall = next((p for p in toutes_les_pieces if p.nom == "Entrance Hall"), None)
     if entrance_hall:
         entrance_hall.visitee = True
         grid_pieces[(2, 8)] = entrance_hall
-        # Initialiser les verrous de l'Entrance Hall
         gestionnaire_pieces.initialiser_verrous_piece(entrance_hall, 8)
 
-    # Placement de l'Antechamber (objectif verrouillé)
     antechamber = next((p for p in toutes_les_pieces if p.nom == "Antechamber"), None)
     if antechamber:
         antechamber.visitee = False
         grid_pieces[(2, 0)] = antechamber
-        # Initialiser les verrous de l'Antechamber
         gestionnaire_pieces.initialiser_verrous_piece(antechamber, 0)
 
-    # Dictionnaire pour marquer les pièces visitées
+    # Variables de suivi
     objets_trouves_par_piece = {}
-    
-    # Variable pour savoir quelle pièce affiche actuellement un message
     piece_actuelle_affichage = None
-    
-    # Position précédente pour détecter les changements de pièce
     position_precedente = tuple(joueur.position)
     
     while True:
         clock.tick(30)
         
-        # Vérification de la victoire
+        # Vérifications victoire/défaite
         if not jeu_termine and verifier_victoire(joueur, grid_pieces):
             afficher_victoire(WIN, WIDTH, HEIGHT)
             afficher_texte_quitter(WIN, WIDTH, HEIGHT)
             jeu_termine = True
         
-        # Vérification de la défaite
         if not jeu_termine and verifier_defaite(joueur):
             afficher_defaite(WIN, WIDTH, HEIGHT)
             afficher_texte_quitter(WIN, WIDTH, HEIGHT)
             jeu_termine = True
         
-        # Si le jeu est terminé, gérer uniquement la fermeture
         if jeu_termine:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -107,10 +93,10 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE or event.key == pygame.K_ESCAPE:
                         pygame.quit()
-                        sys.exit()
+                    continue
             continue
 
-        # Gérer les mouvements et interactions avec la grille
+        # Gestion des contrôles
         (preview_direction, en_attente_selection, pieces_tirees, piece_selectionnee_index, 
          grid_pieces, en_attente_validation_porte, niveau_verrou_porte, porte_validee) = controles.mouvement(
             joueur, preview_direction, GRID_ROWS, GRID_COLS, 
@@ -119,9 +105,9 @@ def main():
             en_attente_validation_porte, niveau_verrou_porte
         )
 
-        # Si la porte a été validée, passer au tirage des 3 pièces
+        # Traitement validation porte
         if porte_validee and preview_direction is not None:
-            # Calculer la position future
+            # Calcul destination
             temp_pos = list(joueur.position)
             dest_pos = None
             
@@ -134,7 +120,7 @@ def main():
             elif preview_direction == "droite":
                 dest_pos = (temp_pos[0] + 1, temp_pos[1])
             
-            # Marquer la porte actuelle comme ouverte
+            # Ouverture porte actuelle
             piece_actuelle = grid_pieces.get(tuple(joueur.position))
             if piece_actuelle:
                 direction_sortie_map = {
@@ -147,7 +133,7 @@ def main():
                 if direction_sortie and hasattr(piece_actuelle, 'portes_ouvertes'):
                     piece_actuelle.portes_ouvertes[direction_sortie] = True
             
-            # NOUVEAU : Vérifier si la destination a une ouverture correspondante avant de continuer
+            # Vérification ouverture destination
             if dest_pos and dest_pos in grid_pieces:
                 piece_destination = grid_pieces[dest_pos]
                 direction_entree_requise = {
@@ -160,12 +146,12 @@ def main():
                 
                 # Si la pièce destination n'a pas d'ouverture correspondante, annuler
                 if direction_requise and direction_requise not in piece_destination.directions:
-                    print("Cette porte donne sur un mur ! Porte déverrouillée mais impossible de traverser.")
+                    print("Porte déverrouillée mais mur derrière !")
                     preview_direction = None
                     porte_validee = False
                     continue
             
-            # Si la destination n'existe pas, tirer les 3 pièces
+            # Tirage 3 pièces si case vide
             if dest_pos and dest_pos not in grid_pieces:
                 pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, GRID_ROWS, GRID_COLS, preview_direction, joueur)
                 
@@ -173,17 +159,15 @@ def main():
                     en_attente_selection = True
                     piece_selectionnee_index = 0
                 else:
-                    print("Aucune pièce valide disponible !")
+                    print("Aucune pièce disponible !")
                     preview_direction = None
-            # Si la destination existe déjà, déplacer le joueur
+            # Déplacement si pièce existante
             elif dest_pos and dest_pos in grid_pieces:
                 if joueur.deplacer(preview_direction):
                     joueur.utiliser_pas()
-                    
-                    # Marquer la porte comme ouverte dans la pièce de destination
                     piece_destination = grid_pieces[dest_pos]
                     
-                    # SPECIAL: Marquer l'Antechamber comme visitée pour déclencher la victoire
+                    # Marquage Antechamber pour victoire
                     if piece_destination.nom == "Antechamber":
                         piece_destination.visitee = True
                     
@@ -202,27 +186,27 @@ def main():
 
         pos_tuple = tuple(joueur.position)
         
-        # Détecter si le joueur a changé de pièce
+        # Détection changement de pièce
         if pos_tuple != position_precedente:
             position_precedente = pos_tuple
             
-            # Vérifier si le joueur est dans une pièce
+            # Collecte objets nouvelle pièce
             if pos_tuple in grid_pieces:
                 piece_actuelle = grid_pieces[pos_tuple]
                 
-                # Collecter les objets dans la pièce (une seule fois par pièce)
+                # Première visite seulement
                 if pos_tuple not in objets_trouves_par_piece:
                     objets_trouves_noms = []
                     
-                    # Appliquer les effets garantis de la pièce (première visite seulement)
+                    # Effets garantis pièce
                     message_effet = appliquer_effets_pieces_garantis(piece_actuelle, joueur)
                     if message_effet:
                         objets_trouves_noms.append(message_effet)
                     
-                    # Collecter les objets
+                    # Collecte objets
                     for objet in piece_actuelle.objets:
                         if not objet.is_collected:
-                            # Vérifier d'abord si l'objet unique est déjà possédé
+                            # Vérification objets uniques
                             if objet.unique:
                                 deja_possede = False
                                 if objet.nom == 'detecteur de metaux' and joueur.chance_metaux == 2:
@@ -239,42 +223,39 @@ def main():
                             nom_affiche = objet.appliquer_effet(joueur)
                             if nom_affiche:
                                 objets_trouves_noms.append(nom_affiche)
-                                
                                 if objet.unique:
                                     retirer_objets_uniques_de_toutes_pieces(grid_pieces, objet.nom)
                     
-                    # Stocker le message pour cette pièce
+                    # Message collecte
                     if objets_trouves_noms:
-                        message_final = f"Vous avez trouvé : {', '.join(objets_trouves_noms)}"
-                        objets_trouves_par_piece[pos_tuple] = message_final
-                        piece_actuelle_affichage = pos_tuple  # Activer l'affichage pour cette pièce
+                        objets_trouves_par_piece[pos_tuple] = f"Vous avez trouvé : {', '.join(objets_trouves_noms)}"
+                        piece_actuelle_affichage = pos_tuple
                     else:
-                        objets_trouves_par_piece[pos_tuple] = True  # Marquer comme visitée sans message
+                        objets_trouves_par_piece[pos_tuple] = True
                         piece_actuelle_affichage = None
                 else:
-                    # Pièce déjà visitée, désactiver l'affichage
                     piece_actuelle_affichage = None
         
-        # Afficher le message si on est dans la pièce d'affichage active
+        # Affichage message collecte
         texte_objets_trouves = None
         if piece_actuelle_affichage == pos_tuple and pos_tuple in objets_trouves_par_piece:
             if isinstance(objets_trouves_par_piece[pos_tuple], str):
                 texte_objets_trouves = objets_trouves_par_piece[pos_tuple]
 
-        # Préparer le message de validation de porte
+        # Message validation porte
         message_porte = None
         if en_attente_validation_porte:
             if niveau_verrou_porte == 0:
-                message_porte = "Cette porte est Ouverte\n\nAppuyez sur Espace pour passer"
+                message_porte = "Porte Ouverte\n\nEspace pour passer"
             elif niveau_verrou_porte == 1:
                 if joueur.kit_crochetage == 1:
-                    message_porte = "Cette porte est Verrouillée\n\nUtiliser le Kit de Crochetage\n(Appuyez sur Espace)"
+                    message_porte = "Porte Verrouillée\n\nKit de Crochetage\n(Espace)"
                 else:
-                    message_porte = f"Cette porte est Verrouillée\n\nUtiliser 1 clé\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+                    message_porte = f"Porte Verrouillée\n\n1 clé requise\n({joueur.cles} clé(s))\n\nEspace: ouvrir | Échap: annuler"
             elif niveau_verrou_porte == 2:
-                message_porte = f"Cette porte est Verrouillée à Double Tour\n\nUtiliser 1 clé\n(Kit ne fonctionne pas)\n(Vous avez {joueur.cles} clé(s))\n\nAppuyez sur Espace pour ouvrir\nou Échap pour annuler"
+                message_porte = f"Porte Double Verrou\n\n1 clé requise\n(Kit inutile)\n({joueur.cles} clé(s))\n\nEspace: ouvrir | Échap: annuler"
 
-        # Dessiner la fenêtre du jeu avec l'état actuel
+        # Affichage
         colors = {'WHITE': WHITE, 'BLACK': BLACK, 'GREY': GREY, 'BLUE': BLUE}
         fenetre_draw_window(WIN, joueur, grid_pieces, preview_direction, GRID_ROWS, GRID_COLS, cell_w, cell_h,
                             GAME_WIDTH, SIDEBAR_WIDTH, WIDTH, HEIGHT,

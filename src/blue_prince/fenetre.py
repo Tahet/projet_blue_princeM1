@@ -311,7 +311,6 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
     pygame.draw.line(win, DARK_BLUE, (sidebar_x + sidebar_width, menu_y_start), (sidebar_x + sidebar_width, total_height), 3)  # Droite
     pygame.draw.line(win, DARK_BLUE, (sidebar_x, total_height - 1), (sidebar_x + sidebar_width, total_height - 1), 3)  # Bas
 
-    # NOUVEAU : Affichage du message de porte
     if message_porte:
         # Fond semi-transparent sur toute la zone de menu
         overlay = pygame.Surface((sidebar_width, total_height - menu_y_start))
@@ -394,7 +393,6 @@ def draw_window(win, joueur, grid_pieces, preview_direction, grid_rows, grid_col
             cout_text = pygame.font.SysFont("arial", 14).render(f"Coût: {cout} gemmes", True, cout_color)
             win.blit(cout_text, (piece_x + piece_size + 15, piece_y + 45))
             
-            # NOUVEAU : Afficher l'effet de la pièce s'il existe
             if effet_piece:
                 effet_text = effet_font.render(effet_piece, True, (0, 120, 0))
                 win.blit(effet_text, (piece_x + piece_size + 15, piece_y + 70))

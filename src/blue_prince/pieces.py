@@ -161,7 +161,6 @@ class Piece:
     
         nouvelle_piece.visitee = False
         nouvelle_piece.objets = self.objets.copy()
-        # NOUVEAU : Copier les verrous
         nouvelle_piece.verrous = self.verrous.copy() if hasattr(self, 'verrous') else {}
         nouvelle_piece.portes_ouvertes = self.portes_ouvertes.copy() if hasattr(self, 'portes_ouvertes') else {}
     

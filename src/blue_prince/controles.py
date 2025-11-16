@@ -13,7 +13,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            # Mode validation de porte (nouveau)
+            # Mode validation de porte
             if en_attente_validation_porte:
                 if event.key == pygame.K_SPACE:
                     # Vérifier si le joueur a les ressources nécessaires
@@ -76,7 +76,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                     elif preview_direction == "droite":
                         dest_pos = (temp_pos[0] + 1, temp_pos[1])
                     
-                    # Nouveau tirage avec filtrage et rotation automatique
                     pieces_tirees = joueur_tire_pieces(gestionnaire_pieces, dest_pos, grid_pieces, grid_rows, grid_cols, preview_direction, joueur)
                     
                     piece_selectionnee_index = 0
@@ -95,8 +94,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             # Marquer la pièce comme utilisée dans le gestionnaire
                             gestionnaire_pieces.utiliser_piece(piece_choisie.nom)
                             
-                            # NOUVEAU : Nettoyer SEULEMENT les portes vers l'extérieur du plateau
-                            # On garde les portes qui donnent sur des murs de voisins (c'est normal dans Blue Prince)
+                            # Nettoyage portes vers l'extérieur
                             directions_a_garder = []
                             col, row = nouvelle_pos
                             
@@ -119,7 +117,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                             # Mettre à jour les directions de la pièce
                             piece_choisie.directions = directions_a_garder
                             
-                            # NOUVEAU : Initialiser les verrous de la pièce
                             gestionnaire_pieces.initialiser_verrous_piece(piece_choisie, nouvelle_pos[1])
                             
                             # Marquer la porte par laquelle on est entré comme ouverte
@@ -199,7 +196,7 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                                 return (preview_direction, en_attente_selection, pieces_tirees, 
                                         piece_selectionnee_index, grid_pieces, False, 0, False)
                             
-                            # NOUVEAU : Vérifier le verrou de cette porte
+                            # Vérification verrou
                             if hasattr(piece_actuelle, 'verrous') and orientation_requise in piece_actuelle.verrous:
                                 # Si la porte n'est pas déjà ouverte
                                 if not piece_actuelle.portes_ouvertes.get(orientation_requise, False):
@@ -214,7 +211,6 @@ def mouvement(joueur, preview_direction, grid_rows, grid_cols,
                         if dest_pos in grid_pieces:
                             piece_destination = grid_pieces[dest_pos]
                             
-                            # NOUVEAU : Vérifier si la pièce de destination a une ouverture correspondante
                             direction_entree_requise = {
                                 "haut": "S",
                                 "bas": "N",

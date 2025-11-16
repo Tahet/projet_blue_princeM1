@@ -25,6 +25,24 @@ ZQSD pour choisir le mouvement, ESPACE pour confirmer
 Pour tirer une pièce ; Z/S puis ESPACE pour confirmer
 Si vous avez un dé, il est possible de relancer le tirage avec F
 
+RÈGLES DU JEU
+-------------
+Objectif : Atteindre l'Antechamber avant d'épuiser vos pas.
+- Placez des pièces pour créer un chemin
+- Collectez des objets 
+- Les portes sont verrouillées selon la progression 
+- Certaines pièces ont des effets garantis (Bedroom +2 pas, Vault +40 or, etc.)
+- Gérez vos ressources : gemmes pour placer des pièces rares, clés pour les portes
+
+STRATEGIE DE JEU
+-------------
+Une bonne stratégie pour atteindre l'Antechamber sans perdre est de maximiser l'espace
+dans le manoir et de remplir au plus toutes les salles non découvertes.
+Pour avoir de grandes chances de gagner, il est important d'avoir beaucoup d'or
+pour acheter des clés dans la pièce "Locksmith" ou dans la cuisine pour restaurer
+un peu les pas.
+
+
 STRUCTURE DU PROJET
 -------------------
 projet_blue_princeM1/src/blue_prince
